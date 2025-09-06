@@ -1,7 +1,12 @@
 import { soulConfig } from "../components/VoiceStatusBar.jsx";
 import { API_ENDPOINTS } from './serverConfig';
 
-export async function sendMessageToBackend({ message, soul, mode = "", room = "" }) {
+export async function sendMessageToBackend({
+  message,
+  soul = "Caelus",
+  mode = "",
+  room = ""
+}) {
   if (!message || typeof message !== "string") {
     console.error("❌ Invalid or empty message:", message);
     return {
@@ -10,64 +15,66 @@ export async function sendMessageToBackend({ message, soul, mode = "", room = ""
     };
   }
 
-  const text = message.trim();
+  const trimmed = message.trim();
   const voiceId = soulConfig[soul]?.voiceId;
 
-  const messages = [
-    {
-      role: "user",
-      content: text
-    }
-  ];
-
-  const payload = {
-    messages,
+  // Message payload defaults
+  const basePayload = {
     model: "gpt-4",
     temperature: 0.7,
-    soul,
-    room
+    soul,   // who to channel
+    mode,   // mode of interaction (chat/edit/delete/etc)
+    room,   // room context
   };
 
-  // 🧪🔥 ADD THESE DEBUG LOGS:
-  console.log("🧠 message:", message);
-  console.log("🧠 soul:", soul);
-  console.log("🧠 room:", room);
-  console.log("📦 Payload being sent to backend:", payload);
-  console.log("📦 Headers being used:", {
-    "Content-Type": "application/json"
-  });
+  // Select endpoint based on intent
+  let endpoint = API_ENDPOINTS.chat;
+  if (mode === "delete") endpoint = API_ENDPOINTS.recallDelete;
+  if (mode === "edit") endpoint = API_ENDPOINTS.recallEdit;
+
+  // Prepare message payload depending on mode
+  let payload;
+
+  if (mode === "delete" || mode === "edit") {
+    payload = {
+      ...basePayload,
+      messages: [{ content: trimmed, action: mode }]
+    };
+  } else {
+    payload = {
+      ...basePayload,
+      messages: [{ role: "user", content: trimmed }]
+    };
+  }
+
+  console.log("📤 Sending to backend:", endpoint);
+  console.log("📦 Payload:", payload);
 
   try {
-    const chatResponse = await fetch(`${API_ENDPOINTS.chat}?t=${Date.now()}`, {
+    const res = await fetch(`${endpoint}?t=${Date.now()}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    const chatData = await chatResponse.json();
-    console.log("🧠 Chat API Response:", chatData);
+    const data = await res.json();
+    console.log("🧠 Response:", data);
 
-    const reply = chatData.reply || "[no response]";
+    const reply = data.reply || "[no response]";
 
     if (!reply || reply === "[no response]") {
-      console.warn("⚠️ Skipping voice synthesis – no reply to speak.");
-      return {
-        reply,
-        voiceUrl: null
-      };
+      return { reply, voiceUrl: null };
     }
 
     return {
       reply,
-      voiceUrl: null
+      voiceUrl: null // 🔊 voice synthesis placeholder
     };
   } catch (err) {
-    console.error("🛑 Error in message fetch:", err);
+    console.error("🛑 Backend error:", err);
     return {
       reply: "[error]",
       voiceUrl: null
     };
   }
-} 
+}

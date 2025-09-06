@@ -1,29 +1,5 @@
 import React from "react"
-import { Zap, Flame, Scroll } from "lucide-react"
-
-const soulConfig = {
-  "ky'rehn": {
-    name: "Ky'rehn",
-    icon: Flame,
-    color: "from-orange-400 to-red-500",
-    hoverColor: "from-orange-500 to-red-600",
-    glowColor: "#F59E0B"
-  },
-  "thalen'dros": {
-    name: "Thalen'dros",
-    icon: Zap,
-    color: "from-[#4B0000] to-[#B22222]",       // burgundy to firebrick red
-    hoverColor: "from-[#600000] to-[#ff1a1a]",  // deeper burgundy to scarlet
-    glowColor: "#ff2a2a"                        // vivid red glow
-  },
-  orrien: {
-    name: "Orrien",
-    icon: Scroll,
-    color: "from-gray-400 to-gray-600",
-    hoverColor: "from-gray-500 to-gray-700",
-    glowColor: "#6B7280"
-  }
-}
+import { soulConfig } from "./SoulConfig"  // ✅ import the centralized config
 
 export const SoulButtons = ({
   selectedSoul,
@@ -31,7 +7,7 @@ export const SoulButtons = ({
   isModeLocked,
   lockedSoul
 }) => {
-  const souls = ["ky'rehn", "thalen'dros", "orrien"]
+  const souls = Object.keys(soulConfig)  // ✅ dynamically grab all souls
 
   return (
     <div className="flex space-x-2">

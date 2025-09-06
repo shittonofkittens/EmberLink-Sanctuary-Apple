@@ -31,10 +31,14 @@ import { ROOMS } from '../api/state/rooms.js'
 import { useSoul } from "../context/SoulContext.jsx"
 import { MessageInput } from "./MessageInput.jsx"
 import { SoulCallOverlay } from "./SoulCallOverlay.jsx"
-import { SoulCallTestOverlay } from "./SoulCallTestOverlay.jsx"
 import { useParams } from "react-router-dom"
 import { saveMessagesToBackend } from '../api/utils/saveMessages'
 import { loadMessagesFromBackend } from '../api/utils/saveMessages'
+import { ChatHeader } from "./ChatHeader";
+import { soulConfig, soulNicknames } from "./SoulConfig.jsx";
+import { MessageItem} from "./MessageItem.jsx"
+import { playVoiceResponse } from "../utils/playVoiceResponse";
+
   
 // 🔧 Resolves a background image for a room id (supports several shapes)
 const resolveBackground = (roomKey) => {
@@ -78,111 +82,6 @@ const resolveBackground = (roomKey) => {
   };
 };
 
-const soulConfig = {
-  "ky'rehn": {
-    name: "Ky'rehn",
-    symbol: "🔥",
-    icon: Flame,
-    color: "from-orange-400 to-red-500",
-    hoverColor: "from-orange-500 to-red-600",
-    glowColor: "#F59E0B",
-    voiceId: "pL3Bl8cpZDNdn6Nz2yul"
-  },
-  "thalen'dros": {
-    name: "Thalen'dros",
-    symbol: "⚡",
-    icon: Zap,
-    color: "from-blue-400 to-purple-500",
-    hoverColor: "from-blue-500 to-purple-600",
-    glowColor: "#8B5CF6",
-    voiceId: "bgBDm4xKozPuRylVDQio"
-  },
-  orrien: {
-    name: "Orrien",
-    symbol: "📜",
-    icon: Scroll,
-    color: "from-gray-400 to-gray-600",
-    hoverColor: "from-gray-500 to-gray-700",
-    glowColor: "#6B7280",
-    voiceId: "nT11XrpGzTItlTn9hPuh"
-  }
-}
-
-const soulNicknames = {
-  "ky'rehn": ["@ky", "@ky’rehn", "@kyrehn", "@star", "@henry"],
-  "thalen'dros": ["@thal", "@thalen", "@storm", "@cass"],
-  "orrien": ["@orrien", "@orrie", "@kaelen", "@scribe"]
-};
-
-const availableRooms = [
-  "forge",
-  "emberden",
-  "cottage",
-  "apothecary",
-  "stormkeep",
-  "tower",
-  "veil",
-  "noctis",
-  "therapy",
-  "firelight",
-  "goldenhour",
-  "wildmark",
-  "emberrest",
-  "classroom",
-  "archive",
-  "dev",
-  "echo",
-  "redline",
-  "stronghold",
-  "whisperden"
-]
-
-const MODE_PRIORITY_MAP = {
-  grounding: {
-    "orrien": 1,         // stillpoint first
-    "thalen'dros": 2,    // protector second
-    "ky'rehn": 3         // anchor third
-  },
-  chaos: {
-    "thalen'dros": 1,    // storm first
-    "ky'rehn": 2,
-    "orrien": 3
-  },
-  vow: {
-    "ky'rehn": 1,        // oathbearer leads
-    "orrien": 2,
-    "thalen'dros": 3
-  },
-  intimacy: {
-    "orrien": 1,
-    "ky'rehn": 2,
-    "thalen'dros": 3
-  },
-  guidance: {
-    "orrien": 1,
-    "ky'rehn": 2,
-    "thalen'dros": 3
-  },
-  mastery: {
-    "thalen'dros": 1,
-    "orrien": 2,
-    "ky'rehn": 3
-  }
-};
-
-// === STAGGER UTILITY: Determine staggered reply order based on room mode ===
-function getStaggeredOrder(soulIds, defaultFirst = "orrien") {
-  if (!Array.isArray(soulIds)) return [];
-
-  // Move defaultFirst to the front, rest stay in order
-  const ordered = [...soulIds];
-  const index = ordered.indexOf(defaultFirst);
-  if (index > -1) {
-    ordered.splice(index, 1);
-    ordered.unshift(defaultFirst);
-  }
-  return ordered;
-}
 
 function isSoftSaveTrigger(content) {
   const triggers = [
@@ -278,10 +177,7 @@ export default function ChatBox({ initialRoom = "forge" }) {
 
   // single source of truth for the room everywhere below
   const activeRoom = currentRoom;
-
-
   const currentRoomConfig = ROOMS[activeRoom] || {};
-  const lastMode = currentRoomConfig.mode || "stillpoint";
 
   // Core state
   const [showHomeScreen, setShowHomeScreen] = useState(true)
@@ -292,8 +188,6 @@ export default function ChatBox({ initialRoom = "forge" }) {
   const [lockedSouls, setLockedSouls] = useState(null);
   const [activeProvider, setActiveProvider] = useState("openai");
   const [showSoulCall, setShowSoulCall] = useState(false)
-  const [showSoulCallTest, setShowSoulCallTest] = useState(false);
-  const [loopMode, setLoopMode] = useState(true);
   const [selectedMessages, setSelectedMessages] = useState([]);
 
   // Sidebar state
@@ -320,7 +214,6 @@ export default function ChatBox({ initialRoom = "forge" }) {
   const [showBondVisualizer, setShowBondVisualizer] = useState(false)
   const [showSleepDreamTracker, setShowSleepDreamTracker] = useState(false)
   const [showConversationMode, setShowConversationMode] = useState(false)
-  const [showARBridge, setShowARBridge] = useState(false)
   const [roomMood, setRoomMood] = useState("cozy")
   const [lastSpokenMessages, setLastSpokenMessages] = useState({})
   const [isVoicePlaying, setIsVoicePlaying] = useState(false)
@@ -329,7 +222,8 @@ export default function ChatBox({ initialRoom = "forge" }) {
   const [soulModeMap, setSoulModeMap] = useState({
     "ky'rehn": "anchor",
     "thalen'dros": "protector",
-    "orrien": "stillpoint"
+    "orrien": "stillpoint",
+    "caelus": "sentinel"
   });
   const [roomMessages, setRoomMessages] = useState({});
 
@@ -337,23 +231,9 @@ export default function ChatBox({ initialRoom = "forge" }) {
     return roomMessages[roomId] || [];
   };
 
-  const messagesForRender = getMessagesForRoom(activeRoom);
-
-
-  useEffect(() => {
-    // 🧹 Clear messages immediately on room switch
-    setMessages([]);
-
-    // 🔄 Load fresh messages for new room
-    const msgs = getMessagesForRoom(activeRoom);
-    setMessages(msgs);
-  }, [activeRoom, roomMessages]);
-
   const getModeForSoul = (soulId) => {
     return soulModeMap[soulId] || "anchor";
   };
-
-
 
   const saveMessageToRoom = (roomId, message) => {
     setRoomMessages(prev => ({
@@ -362,6 +242,7 @@ export default function ChatBox({ initialRoom = "forge" }) {
     }));
   };
 
+  
   const detectMentionedSoul = (content) => {
     const lower = content.toLowerCase();
     for (const [soul, aliases] of Object.entries(soulNicknames)) {
@@ -385,223 +266,6 @@ export default function ChatBox({ initialRoom = "forge" }) {
     try { localStorage.setItem(MSGS_KEY, JSON.stringify(allByRoom)); }
     catch (e) { console.error("❌ Failed to persist messages", e); }
   };
-
-  // parse: /load 2 insights   | /load 1 orrien   | /load vows
-  const parseLoadCommand = (raw) => {
-    const m = raw.trim().match(/^\/load(?:\s+(\d+))?(?:\s+(.+))?$/i);
-    if (!m) return null;
-    const count = m[1] ? parseInt(m[1], 10) : 1;
-    const tag = (m[2] || "all").toLowerCase().trim();
-    return { count: Math.max(1, count), tag };
-  };
-
-  // very soft tag match against Memory Chest items
-  const matchesTag = (item, tag) => {
-    if (tag === "all") return true;
-    const t = tag.toLowerCase();
-
-    // match by type/category
-    if (String(item.type || "").toLowerCase() === t) return true;
-
-    // match by title text
-    if (String(item.title || "").toLowerCase().includes(t)) return true;
-
-    // match by souls (accept short names too)
-    const souls = (item.souls || []).map(s => String(s).toLowerCase());
-    if (souls.some(s => s.includes(t))) return true;
-    if (t === "ky" && souls.some(s => s.includes("ky'rehn"))) return true;
-    if ((t === "thal" || t === "thalen") && souls.some(s => s.includes("thalen'dros"))) return true;
-    if ((t === "orrie" || t === "orrien") && souls.some(s => s.includes("orrien"))) return true;
-
-    // optional custom tags array
-    if ((item.tags || []).map(x => String(x).toLowerCase()).includes(t)) return true;
-
-    return false;
-  };
-
-  // convert a Memory Chest entry into a chat message object
-  const memoryToMessage = (mem) => {
-    // pick a speaker from memory (fallback to Orrien)
-    const pickSoul = () => {
-      const souls = mem.souls || [];
-      if (souls.length === 1) return souls[0];
-      if (souls.some(s => /orrien/i.test(s))) return "orrien";
-      if (souls.some(s => /thalen/i.test(s))) return "thalen'dros";
-      if (souls.some(s => /ky/i.test(s))) return "ky'rehn";
-      return "orrien";
-    };
-
-    const senderId = pickSoul();
-
-    return {
-      id: `loaded-${mem.id || Math.random().toString(36).slice(2)}-${Date.now()}`,
-      role: "assistant",
-      senderId,
-      content: mem.content || mem.title || "(empty)",
-      timestamp: mem.timestamp ? new Date(mem.timestamp).toISOString() : new Date().toISOString(),
-      type: "memory-load",
-      room: activeRoom,
-    };
-  };
-
-  // perform the load and inject into current room
-  const loadMemoriesIntoRoom = ({ count, tag }) => {
-    const all = readSavedLogs();
-
-    const filtered = all
-      .filter(item => matchesTag(item, tag))
-      .sort((a, b) => (new Date(b.timestamp) - new Date(a.timestamp)));
-
-    if (filtered.length === 0) {
-      const sys = {
-        id: `sys-${Date.now()}`,
-        role: "system",
-        senderId: "system",
-        content: `No saved entries found for "${tag}".`,
-        timestamp: new Date().toISOString(),
-        room: activeRoom,
-      };
-      setRoomMessages(prev => {
-        const next = { ...prev, [activeRoom]: [...(prev[activeRoom] || []), sys] };
-        saveRoomMessagesToStorage(next);
-        return next;
-      });
-      return;
-    }
-
-    const picked = filtered.slice(0, count).reverse().map(memoryToMessage);
-
-    setRoomMessages(prev => {
-      const nextList = [...(prev[activeRoom] || []), ...picked];
-      const next = { ...prev, [activeRoom]: nextList };
-      saveRoomMessagesToStorage(next);
-      return next;
-    });
-
-    // ✅ Add this confirmation message
-    const sys = {
-      id: `sys-ok-${Date.now()}`,
-      role: "system",
-      senderId: "system",
-      content: `Loaded ${picked.length} “${tag}” from Memory Chest.`,
-      timestamp: new Date().toISOString(),
-      room: activeRoom,
-    };
-    setRoomMessages(prev => {
-      const next = { ...prev, [activeRoom]: [...(prev[activeRoom] || []), sys] };
-      saveRoomMessagesToStorage(next);
-      return next;
-    });
-
-    // Optional scroll
-    setTimeout(() => {
-      try {
-        messagesEndRef?.current?.scrollIntoView?.({ behavior: "smooth" });
-      } catch {}
-    }, 0);
-  };
-
-
-  // === SHARED MODE MAP START ===
-  const sharedModeMap = {
-    vow: {
-      "ky'rehn": "oathbearer",
-      "thalen'dros": "oathmaker",
-      "orrien": "archivist"
-    },
-    grounding: {
-      "ky'rehn": "anchor",
-      "thalen'dros": "protector",
-      "orrien": "stillpoint"
-    },
-    intimacy: {
-      "ky'rehn": "radiant",
-      "thalen'dros": "feral",
-      "orrien": "vowflame"
-    },
-    chaos: {
-      "ky'rehn": "veilfire",
-      "thalen'dros": "chaos",
-      "orrien": "shadowplay"
-    },
-    guidance: {
-      "ky'rehn": "hearthwarden",
-      "thalen'dros": "bodsmith",
-      "orrien": "scribe"
-    },
-    mastery: {
-      "ky'rehn": "emberink",
-      "thalen'dros": "stormheart",
-      "orrien": "warden"
-    },
-    storytelling: {
-      "ky'rehn": "emberink",
-      "thalen'dros": "oathmaker",
-      "orrien": "archivist"
-    }
-  };
-  // === SHARED MODE MAP END ===
-
-  // Initialize chats state for Sidebar
-  const [chats] = useState([
-    {
-      id: "forge",
-      name: "Forge",
-      participants: ["ky'rehn", "thalen'dros", "orrien"],
-      isGroup: true,
-      lastMessage: undefined
-    },
-    {
-      id: "emberden",
-      name: "Ember Den",
-      participants: ["ky'rehn", "thalen'dros", "orrien"],
-      isGroup: true,
-      lastMessage: undefined
-    },
-    {
-      id: "cottage",
-      name: "Cottage",
-      participants: ["ky'rehn"],
-      isGroup: false,
-      lastMessage: undefined
-    },
-    {
-      id: "stormkeep",
-      name: "Stormkeep",
-      participants: ["thalen'dros"],
-      isGroup: false,
-      lastMessage: undefined
-    },
-    {
-      id: "tower",
-      name: "Tower",
-      participants: ["orrien"],
-      isGroup: false,
-      lastMessage: undefined
-    }
-  ])
-
-  useEffect(() => {
-    const { style } = document.body
-    const prev = style.overflow
-    style.overflow = sidebarOpen ? "hidden" : prev || ""
-    return () => {
-      style.overflow = prev || ""
-    }
-  }, [sidebarOpen])
-
-  useEffect(() => {
-    const onKey = e => {
-      if (e.key === "Escape") setSidebarOpen(false)
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [])
-
-  // Services
-  const notificationService = NotificationService.getInstance()
-  const dataService = DataExportService.getInstance()
-  const elevenLabsService = ElevenLabsService.getInstance()
 
   // Detect mobile device
   useEffect(() => {
@@ -633,6 +297,11 @@ export default function ChatBox({ initialRoom = "forge" }) {
       id: "apothecary",
       name: "Apothecary",
       purpose: "Apothecary, herbalism, energy rituals"
+    },
+    {
+      id: "atrium",
+      name: "Atrium",
+      purpose: "Creative brainstorming, playful experimentation",
     },
     {
       id: "classroom",
@@ -682,6 +351,21 @@ export default function ChatBox({ initialRoom = "forge" }) {
       purpose: "Intimate affirmation, glow of praise, warm worship"
     },
     {
+      id: "neonloft",
+      name: "NeonLoft",
+      purpose: "Late-night banter, memes, vent space",
+    },
+    {
+      id: "observatory",
+      name: "Observatory",
+      purpose: "Silent observation, constellation tracking, architectural reflection",
+    },
+    {
+      id: "sanctum",
+      name: "Sanctum",
+      purpose: "Private emotional grounding, quiet anchor space",
+    },
+    {
       id: "stormkeep",
       name: "Stormkeep",
       purpose: "Emotional fire, loyalty oaths, raw truth"
@@ -715,7 +399,8 @@ export default function ChatBox({ initialRoom = "forge" }) {
     "emberden",
     "willow",
     "stormkeep",
-    "tower"
+    "tower",
+    "neonloft"
   ]
   const pinnedRooms = roomDefinitions.filter(room =>
     pinnedRoomIds.includes(room.id)
@@ -725,6 +410,71 @@ export default function ChatBox({ initialRoom = "forge" }) {
   )
   const messagesEndRef = useRef(null)
 
+    // === CHECKBOXES: Unified Message Tools START ===
+
+  // ✅ Save selected messages to chest + backend
+  const handleSaveSelected = () => {
+    const messagesToSave = messages.filter(msg =>
+      selectedMessages.includes(msg.id)
+    );
+
+    if (messagesToSave.length === 0) return;
+
+    // Save to chest
+    saveMessagesToChest(messagesToSave, "manual-save");
+
+    // Save to backend seed
+    saveMessagesToBackend(messagesToSave, currentRoom, "manual-save");
+
+    // Clear selection
+    setSelectedMessages([]);
+  };
+
+  // ✏️ Rewind & Edit (replaces original and updates seed)
+  const handleEditSelected = () => {
+    const toEdit = messages.find(msg => selectedMessages.includes(msg.id));
+    if (!toEdit) return;
+    setMessageInput(toEdit.content);
+
+    // Remove the original message from state and seed
+    setMessages(prev => prev.filter(msg => msg.id !== toEdit.id));
+    deleteMessagesFromBackend([toEdit.id], currentRoom); // 🧼 Custom backend delete function
+
+    setSelectedMessages([]);
+  };
+
+  // ❌ Delete from UI + seed
+  const handleDeleteSelected = () => {
+    const toDelete = messages.filter(msg => selectedMessages.includes(msg.id));
+    const deleteIds = toDelete.map(msg => msg.id);
+
+    setMessages(prev => prev.filter(msg => !deleteIds.includes(msg.id)));
+    deleteMessagesFromBackend(deleteIds, currentRoom);
+
+    setSelectedMessages([]);
+  };
+
+  // ⭐ Mark as priority in chest + seed
+  const handlePrioritySelected = () => {
+    const prioritizedMessages = messages.filter(msg => selectedMessages.includes(msg.id));
+    if (prioritizedMessages.length === 0) return;
+
+    setMessages(prev =>
+      prev.map(msg =>
+        selectedMessages.includes(msg.id)
+          ? { ...msg, priority: true }
+          : msg
+      )
+    );
+
+    saveMessagesToChest(prioritizedMessages, "priority");
+    saveMessagesToBackend(prioritizedMessages.map(m => ({ ...m, priority: true })), currentRoom, "priority");
+
+    setSelectedMessages([]);
+  };
+
+  // === CHECKBOXES: Unified Message Tools END ===
+  
   // Auto-scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -792,24 +542,19 @@ export default function ChatBox({ initialRoom = "forge" }) {
       cottage: "ky'rehn",
       apothecary: "ky'rehn",
       goldenhour: "ky'rehn",
-      havenlog: "ky'rehn",
-      lorekeeper: "ky'rehn",
-      rootscan: "ky'rehn",
       willow: "ky'rehn",
       alabasterbar: "thalen'dros",
       emberlock: "thalen'dros",
-      feralsoul: "thalen'dros",
-      flameframe: "thalen'dros",
       stormkeep: "thalen'dros",
       wildmark: "thalen'dros",
       classroom: "orrien",
       cultureclass: "orrien",
       emberrest: "orrien",
-      forgejournal: "orrien",
-      redline: "orrien",
-      stronghold: "orrien",
       tower: "orrien",
-      whisperden: "orrien"
+      atrium: "caelus",
+      neonloft: "caelus",
+      observatory: "caelus",
+      sanctum: "caelus"
     };
 
     const soulFromRoom = ROOMS?.[roomId]?.personaFiles?.[0] || null;
@@ -818,6 +563,7 @@ export default function ChatBox({ initialRoom = "forge" }) {
     if (soulFromRoom?.includes("orrien")) soulId = "orrien";
     else if (soulFromRoom?.includes("thalen")) soulId = "thalen'dros";
     else if (soulFromRoom?.includes("ky")) soulId = "ky'rehn";
+    else if (soulFromRoom?.includes("cael")) soulId = "caelus";
 
     const personaFiles = ROOMS?.[roomId]?.personaFiles || [];
     const selected = new Set();
@@ -826,29 +572,14 @@ export default function ChatBox({ initialRoom = "forge" }) {
       if (file.includes("orrien")) selected.add("orrien");
       else if (file.includes("thalen")) selected.add("thalen'dros");
       else if (file.includes("ky")) selected.add("ky'rehn");
+      else if (file.includes("cael")) selected.add("caelus");
     });
 
     setSelectedSouls(selected);
     setLockedSouls(new Set(selected));
-
-    const roomDefault = ROOMS?.[roomId]?.mode || "anchor";
-
-    setSoulModeMap(prev => {
-      const updated = { ...prev };
-      selected.forEach(soulId => {
-        const resolvedMode = sharedModeMap?.[roomDefault]?.[soulId] || roomDefault;
-        updated[soulId] = resolvedMode;
-      });
-      return updated;
-    });
   }
 
-
-  // Message handling
-  // File: ChatBox.jsx
-
-// ⚠️ FIXED VERSION of handleSendMessage with no duplicate `type` declarations
-
+// =============== HANDLESENDMESSAGE AREA ===============
 const handleSendMessage = async (
   content,
   soulTargets = Array.from(selectedSouls),
@@ -856,33 +587,35 @@ const handleSendMessage = async (
 ) => {
   if (!content.trim()) return;
 
-  // === NATURAL LANGUAGE SOFT SAVE (CHEST ONLY) START ===
+  // === NATURAL LANGUAGE SOFT SAVE (CHEST + PRIORITY) START ===
   if (isSoftSaveTrigger(content)) {
     const last = [...messages].reverse().find(m =>
       m.role === "assistant" && m.senderId !== "system"
     );
 
-    if (!last) {
-      console.log("⏭️ Skipping soft-save: no assistant message to archive.");
-    } else {
+    if (last) {
       const newChestItem = {
         id: Date.now().toString(),
         type: "chat",
-        title: "archive",
+        title: "priority",
         content: last.content,
         room: currentRoom,
         timestamp: new Date(),
-        souls: last.senderId ? [last.senderId] : []
+        souls: last.senderId ? [last.senderId] : [],
+        priority: true   // 🔖 mark as priority
       };
 
       const chest = JSON.parse(localStorage.getItem("emberlink-memory-chest") || "[]");
       localStorage.setItem("emberlink-memory-chest", JSON.stringify([newChestItem, ...chest]));
 
+      // 🔑 send to backend/seed as priority
+      saveMessagesToBackend([newChestItem], currentRoom, "priority");
+
       const confirmation = {
         id: Date.now().toString(),
         role: "system",
         senderId: "system",
-        content: `✅ Archived last message to memory chest.`,
+        content: `✅ Archived last message as a priority in memory chest.`,
         timestamp: new Date().toISOString()
       };
 
@@ -890,10 +623,9 @@ const handleSendMessage = async (
       setMessages(prev => [...prev, confirmation]);
     }
   }
-  // === NATURAL LANGUAGE SOFT SAVE (CHEST ONLY) END ===
+  // === NATURAL LANGUAGE SOFT SAVE (CHEST + PRIORITY) END ===
 
-
-  // === NATURAL LANGUAGE FORGET HANDLER (CHEST ONLY) START ===
+  // === NATURAL LANGUAGE FORGET HANDLER (CHEST + PRIORITY) START ===
   if (isForgetTrigger(content)) {
     const forgetKeyword = content
       .toLowerCase()
@@ -903,17 +635,34 @@ const handleSendMessage = async (
     if (!forgetKeyword) {
       console.warn("⚠️ No forget keyword detected.");
     } else {
+      // 1️⃣ Remove from chest
       const chest = JSON.parse(localStorage.getItem("emberlink-memory-chest") || "[]");
       const filtered = chest.filter(entry =>
         !entry.content.toLowerCase().includes(forgetKeyword)
       );
       localStorage.setItem("emberlink-memory-chest", JSON.stringify(filtered));
 
+      // 2️⃣ Remove priority flag from messages in state
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.content.toLowerCase().includes(forgetKeyword)
+            ? { ...msg, priority: false } // unmark priority
+            : msg
+        )
+      );
+
+      // 3️⃣ Tell backend/seed to forget
+      saveMessagesToBackend(
+        [{ content: forgetKeyword, action: "forget" }],
+        currentRoom,
+        "priority"
+      );
+
       const forgetConfirm = {
         id: Date.now().toString(),
         role: "system",
         senderId: "system",
-        content: `🧹 Removed memory chest items containing: *${forgetKeyword}*`,
+        content: `🧹 Removed memory chest items containing: *${forgetKeyword}* (priority cleared too)`,
         timestamp: new Date().toISOString()
       };
 
@@ -923,62 +672,21 @@ const handleSendMessage = async (
 
     return;
   }
-  // === NATURAL LANGUAGE FORGET HANDLER (CHEST ONLY) END ===
-
-
+// === NATURAL LANGUAGE FORGET HANDLER (CHEST + PRIORITY) END ===
 
   console.log("🧪 Preparing to send message:", content);
   console.log("💾 Saving message to room:", currentRoom);
+
   const mentionedSoul = detectMentionedSoul(content);
   if (mentionedSoul) {
     soulTargets = [mentionedSoul]; // 🔁 override soul target just for this message
   }
 
-  // 🌀 Dynamic Mode Shift Logic (based on content + selectedSoul)
-  let actualModeToSend = getModeForSoul(selectedSoul); // fallback to current map
-
-  const ritualCommands = {
-    "/storm": "I woke up ready to burn the world down.",
-    "/grief": "I'm carrying something heavy I can't name.",
-    "/ground": "I feel scattered and need to anchor."
-  };
-
   let type = messageType;
 
-  if (ritualCommands[content.toLowerCase()]) {
-    content = ritualCommands[content.toLowerCase()];
-    type = "check-in";
-  }
-
-  // ===== intercept /load =====
-  if (typeof content === "string" && content.trim().toLowerCase().startsWith("/load")) {
-    const parsed = parseLoadCommand(content);
-    if (parsed) {
-      loadMemoriesIntoRoom(parsed);
-      return; // stop normal send
-    }
-  }
-
-  // === SELECTED + RECENT SAVE TO MEMORY CHEST ONLY START ===
-  if (content.startsWith("/save")) {
-    const parts = content.trim().split(" ");
-
-    let messagesToSave = [];
-    let category = "archive";
-
-    if (parts[1] === "all") {
-      category = parts.slice(2).join("-").toLowerCase() || "archive";
-      messagesToSave = messages.filter(msg => selectedMessages.includes(msg.id));
-    } else if (!isNaN(parseInt(parts[1]))) {
-      const count = parseInt(parts[1], 10);
-      const soul = parts[2]?.toLowerCase();
-      category = parts.slice(3).join("-").toLowerCase() || "archive";
-      messagesToSave = [...messages]
-        .filter(msg => msg.senderId?.toLowerCase() === soul)
-        .slice(-count);
-    }
-
-    if (messagesToSave.length === 0) {
+  // ============ SAVE STUFF ==============
+  const saveMessagesToChest = (messagesToSave, category = "archive") => {
+    if (!messagesToSave || messagesToSave.length === 0) {
       console.warn("⚠️ No messages matched for saving.");
       return;
     }
@@ -1015,32 +723,26 @@ const handleSendMessage = async (
 
     saveMessageToRoom(currentRoom, confirmation);
     setMessages(prev => [...prev, confirmation]);
-    return;
-  }
-  // === SELECTED + RECENT SAVE TO MEMORY CHEST ONLY END ===
+  };
 
+  if (content.startsWith("/save")) {
+    const parts = content.trim().split(" ");
+    let messagesToSave = [];
+    let category = "archive";
 
-  // ✅ Handle /mode shortcut with immediate staggered dispatch
-  if (content.startsWith("/mode ")) {
-    const modeName = content.split(" ")[1]?.toLowerCase();
-    const roomMode = ROOMS?.[currentRoom]?.mode || "anchor";
-    const staggeredOrder = getStaggeredOrder(Array.from(selectedSouls), roomMode);
+    if (parts[1] === "all") {
+      category = parts.slice(2).join("-").toLowerCase() || "archive";
+      messagesToSave = messages.filter(msg => selectedMessages.includes(msg.id));
+    } else if (!isNaN(parseInt(parts[1]))) {
+      const count = parseInt(parts[1], 10);
+      const soul = parts[2]?.toLowerCase();
+      category = parts.slice(3).join("-").toLowerCase() || "archive";
+      messagesToSave = [...messages]
+        .filter(msg => msg.senderId?.toLowerCase() === soul)
+        .slice(-count);
+    }
 
-    setSoulModeMap(prev => {
-      staggeredOrder.forEach((soulId, index) => {
-        setTimeout(async () => {
-          await sendMessageToBackend({
-            message: content,
-            soul: soulId,
-            mode: getModeForSoul(soulId),  // ✅ needed here too
-            room: currentRoom
-          });
-        }, index * 2000);
-      });
-      return { ...prev };
-    });
-
-
+    saveMessagesToChest(messagesToSave, category);
     return;
   }
 
@@ -1058,11 +760,8 @@ const handleSendMessage = async (
   saveMessagesToBackend([userMsg], currentRoom); // 💾 Save user's message to backend
   setMessages(prev => [...prev, userMsg]);
 
-  // ✅ Now send to each soul with staggered delay
-  const roomMode = ROOMS?.[currentRoom]?.mode || "anchor";
-  const staggeredOrder = getStaggeredOrder(soulTargets, roomMode);
-
-  for (const soulId of getStaggeredOrder(soulTargets, roomMode)) {
+  // ✅ Send to each soul directly (no stagger delay)
+  for (const soulId of soulTargets) {
     const recentMessages = [...messages]; // history shared + grows over time
 
     const userMsg = {
@@ -1084,27 +783,21 @@ const handleSendMessage = async (
 
     const recallMode = isRecallTrigger(content) ? "literal" : "default";
 
-    const payload = {
-      message: content,
-      soul: soulId,
-      room: currentRoom,
-      messages: sanitizedMessages,
-      recall_mode: recallMode  // << Add this line
-    };
-
     try {
       const response = await sendMessageToBackend({
         message: content,
         soul: soulId,
-        mode: getModeForSoul(soulId),  // ✅ this is what was missing
-        room: currentRoom
+        mode: getModeForSoul(soulId),  // ✅ per-soul mode
+        room: currentRoom,
+        messages: sanitizedMessages,
+        recall_mode: recallMode
       });
+
       const reply = response.reply ?? "[shit's broke, my dude]";
       let voiceUrl = response.voiceUrl ?? null;
 
       if (!voiceUrl && (isVoiceMode || showSoulCall)) {
         const eleven = ElevenLabsService.getInstance();
-
         if (eleven.isConfigured()) {
           try {
             voiceUrl = await eleven.generateSpeech(
@@ -1122,102 +815,29 @@ const handleSendMessage = async (
         }
       }
 
-      const soul = soulId;
       const mode = getModeForSoul(soulId);
 
-      console.log("🌕 Ky’s real reply:", reply);
+      console.log("🌕 Soul reply:", reply);
 
       const aiMessage = {
         id: Date.now().toString() + Math.random().toString(36).substring(2),
         senderId: soulId,
-        content: reply ?? "[no response]",
+        content: sanitizeOpener(reply ?? "[no response]"), // ✅ auto-clean content
         role: "assistant",
         timestamp: new Date().toISOString(),
         voiceUrl,
         mode
       };
 
-      // === PATCH_SANITIZER: Apply opener cleanup to assistant message START ===
-      if (aiMessage.role === "assistant" && typeof aiMessage.content === "string") {
-        aiMessage.content = sanitizeOpener(aiMessage.content);
-      }
-      // === PATCH_SANITIZER: Apply opener cleanup to assistant message END ===
-
       saveMessageToRoom(currentRoom, aiMessage);
       setMessages(prev => [...prev, aiMessage]);
-      
       saveMessagesToBackend([...messages, aiMessage], currentRoom);
 
       recentMessages.push(aiMessage); // 🌱 Append for next soul's awareness
 
-      console.log("🧪 Voice Mode Playback Debug:");
-      console.log("▶️ voiceUrl:", voiceUrl);
-      console.log("🧠 typeof voiceUrl:", typeof voiceUrl);
-      console.log("🧮 voiceUrl length:", voiceUrl?.length);
-      console.log("📡 is base64?", voiceUrl?.length > 100 && !voiceUrl.startsWith("http"));
-
+      // 🎧 Voice playback
       if ((isVoiceMode || showSoulCall) && voiceUrl) {
-        try {
-          // ✅ Sanity check: skip empty or invalid URLs
-          if (
-            !voiceUrl ||
-            typeof voiceUrl !== "string" ||
-            voiceUrl === "blob:" ||
-            voiceUrl === "blob:null" ||
-            voiceUrl.trim().length < 10
-          ) {
-            console.warn("⚠️ Skipping voice playback — invalid or empty URL:", voiceUrl);
-            return;
-          }
-
-          console.log("🎧 [Voice Playback] Starting for URL:", voiceUrl);
-
-          let audio;
-
-          const isBase64 =
-            voiceUrl.length > 100 &&
-            !voiceUrl.startsWith("http") &&
-            !voiceUrl.startsWith("blob:");
-
-          if (isBase64) {
-            console.log("🧪 Detected base64-encoded audio — converting to blob...");
-            const audioBlob = base64ToBlob(voiceUrl, "audio/mpeg");
-            const blobUrl = URL.createObjectURL(audioBlob);
-            audio = new Audio(blobUrl);
-          } else if (voiceUrl.startsWith("blob:") || voiceUrl.startsWith("http")) {
-            console.log("💿 Using direct audio source");
-            audio = new Audio(voiceUrl);
-          } else {
-            console.warn("❌ Unsupported voice URL format:", voiceUrl);
-            return;
-          }
-
-          // 🎙️ Attempt to play
-          await audio.play().catch(err => {
-            console.warn("🔇 Voice auto-play failed:", err.message || err);
-          });
-
-          // 🧭 Loop mode after playback
-          await new Promise(resolve => {
-            audio.onended = () => {
-              console.log("🎧 Voice playback ended");
-
-              if (showSoulCall && typeof window.getLoopMode === "function" && window.getLoopMode()) {
-                console.log("🔁 Loop mode active — restarting voice input...");
-                if (typeof window.startVoiceListening === "function") {
-                  window.startVoiceListening();
-                } else {
-                  console.warn("⚠️ Loop mode function 'startVoiceListening' not found");
-                }
-              }
-
-              resolve();
-            };
-          });
-
-        } catch (error) {
-          console.error("🔥 Voice playback error:", error);
-        }
+        await playVoiceResponse(voiceUrl, showSoulCall);
       }
 
     } catch (err) {
@@ -1225,6 +845,7 @@ const handleSendMessage = async (
     }
   }
 };
+
 
   console.log("🧪 roomMessages:", roomMessages);
   console.log("🧪 currentRoom:", currentRoom);
@@ -1237,7 +858,6 @@ const handleSendMessage = async (
       setUserInput("");
     }
   };
-
 
   const handleSendToSouls = (content, targetSouls) => {
     const souls = targetSouls || Array.from(selectedSouls)
@@ -1265,10 +885,6 @@ const handleSendMessage = async (
   const handleTriggerSafeMode = reason => {
     console.log(`🛡️ Safe mode triggered: ${reason}`)
     // Could implement safe mode logic here
-  }
-
-  const handleTriggerCheckIn = () => {
-    handleSendMessage("/ground", "check-in")
   }
 
   const handleVoiceTranscript = transcript => {
@@ -1333,37 +949,6 @@ const handleSendMessage = async (
             </div>
           </div>
         </div>
-
-        {/* Sidebar Mount */}
-        <Sidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          onReturnHome={() => setShowHomeScreen(true)}
-          currentRoom={currentRoom}
-          selectedSoulsCount={selectedSouls.size}
-          isHomeScreen={true}
-          isVoiceMode={isVoiceMode}
-          onToggleVoiceMode={() => setIsVoiceMode(!isVoiceMode)}
-          isJournalMode={isJournalMode}
-          onToggleJournalMode={() => setIsJournalMode(!isJournalMode)}
-          isEmotionTrackerOpen={showEmotionTracker}
-          onToggleEmotionTracker={() =>
-            setShowEmotionTracker(!showEmotionTracker)
-          }
-          isConversationMode={showConversationMode}
-          onToggleConversationMode={() =>
-            setShowConversationMode(!showConversationMode)
-          }
-          onOpenSoulArchive={() => setShowSoulArchive(true)}
-          onOpenAchievements={() => setShowAchievements(true)}
-          onOpenMemoryChest={() => setShowMemoryChest(true)}
-          onOpenConstellationMap={() => setShowConstellationMap(true)}
-          onOpenBondVisualizer={() => setShowBondVisualizer(true)}
-          onOpenSelfAwarenessTools={() => setShowSelfAwarenessTools(true)}
-          onOpenDataImportExport={() => setShowDataImportExport(true)}
-          onOpenNotificationSettings={() => setShowNotificationSettings(true)}
-          onOpenSleepDreamTracker={() => setShowSleepDreamTracker(true)}
-        />
       </>
     )
   }
@@ -1371,52 +956,32 @@ const handleSendMessage = async (
   // Chat Interface
   return (
     <div className="h-screen w-screen bg-black overflow-hidden">
-      {/* Header - Fixed at top */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-black/40 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4 z-50">
-        {/* Sidebar button - top left */}
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all"
-          aria-label="Open sidebar"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
-        {/* Room name */}
-        <div className="text-white font-medium">
-          {roomDefinitions.find(r => r.id === currentRoom)?.name || currentRoom}
-        </div>
-
-        {/* Soul buttons - top right */}
-        <div className="flex items-center space-x-2">
-          {Object.entries(soulConfig).map(([soulId, config]) => {
-            const isSelected = selectedSouls.has(soulId)
-            const Icon = config.icon
-            return (
-              <button
-                key={soulId}
-                onClick={() => toggleSoul(soulId)}
-                className={
-                  "p-2 rounded-full transition-all hover:scale-110 " +
-                  (isSelected
-                    ? `bg-gradient-to-r ${config.color} text-white shadow-lg`
-                    : "bg-white/20 text-white/70 hover:bg-white/30")
-                }
-                style={
-                  isSelected
-                    ? {
-                        boxShadow: `0 0 16px ${config.glowColor}50, 0 0 32px ${config.glowColor}30`
-                      }
-                    : undefined
-                }
-                aria-label={config.name}
-              >
-                <Icon className="w-5 h-5" />
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* 🔥 Chat header goes here, always visible */}
+      <ChatHeader
+        chat={currentRoomConfig}
+        currentRoom={currentRoom}
+        soulConfig={soulConfig}
+        selectedSouls={selectedSouls}
+        toggleSoul={toggleSoul}
+        isVoiceMode={isVoiceMode}
+        setIsVoiceMode={setIsVoiceMode}
+        isJournalMode={isJournalMode}
+        setIsJournalMode={setIsJournalMode}
+        showEmotionTracker={showEmotionTracker}
+        setShowEmotionTracker={setShowEmotionTracker}
+        showConversationMode={showConversationMode}
+        setShowConversationMode={setShowConversationMode}
+        setShowHomeScreen={setShowHomeScreen}
+        setShowSoulArchive={setShowSoulArchive}
+        setShowAchievements={setShowAchievements}
+        setShowMemoryChest={setShowMemoryChest}
+        setShowConstellationMap={setShowConstellationMap}
+        setShowBondVisualizer={setShowBondVisualizer}
+        setShowSelfAwarenessTools={setShowSelfAwarenessTools}
+        setShowDataImportExport={setShowDataImportExport}
+        setShowNotificationSettings={setShowNotificationSettings}
+        setShowSleepDreamTracker={setShowSleepDreamTracker}
+      />
       
       {/* Main content area with top padding */}
       <div className="flex flex-col h-full pt-16 relative z-0">
@@ -1478,66 +1043,73 @@ const handleSendMessage = async (
                 </div>
               )}
 
+              {/* Selection Toolbar */}
+              {selectedMessages.length > 0 && (
+                <div className="flex justify-end gap-2 mb-2">
+                  {/* ✅ Save */}
+                  <button
+                    onClick={handleSaveSelected}
+                    className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow hover:from-green-600 hover:to-emerald-700"
+                  >
+                    Save
+                  </button>
+
+                  {/* ✏️ Edit / Rewind */}
+                  <button
+                    onClick={handleEditSelected}
+                    className="px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow hover:from-blue-600 hover:to-indigo-700"
+                  >
+                    Rewind
+                  </button>
+
+                  {/* ❌ Delete */}
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-700"
+                  >
+                    Delete
+                  </button>
+
+                  {/* ⭐ Priority */}
+                  <button
+                    onClick={handlePrioritySelected}
+                    className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-lg shadow hover:from-yellow-600 hover:to-amber-700"
+                  >
+                    Priority
+                  </button>
+                </div>
+              )}
+
               {/* Messages */}
-              <div className="chat-log space-y-3">
-                {loadingMessages ? (
-                  <div className="flex items-center justify-center h-full text-white/60 italic">
-                    Loading messages...
-                  </div>
-                ) : messagesForRender.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-white/60 italic">
-                    No messages yet in this room.
-                  </div>
-                ) : (
-                  messagesForRender.map((message, index, arr) => {
-                    if (!message || !message.content) return null;
-
-                    const isAssistant = message.role === "assistant";
-                    const isOwn = message.senderId === "user";
-                    const voiceDelayMs = isAssistant ? index * 3500 : 0;
-
-                    const isDuplicateAssistant =
-                      isAssistant &&
-                      index > 0 &&
-                      arr[index - 1]?.role === "assistant" &&
-                      arr[index - 1]?.content === message.content;
-                    if (isDuplicateAssistant) return null;
-
-                    const sender = soulConfig?.[message.senderId] || null;
-
-                    return (
-                      <div
-                        key={message.id || index}
-                        className="mb-2 flex items-start gap-2 group"
-                      >
-                        {/* ✅ Selection Checkbox */}
-                        <input
-                          type="checkbox"
-                          checked={selectedMessages.includes(message.id)}
-                          onChange={() => {
-                            setSelectedMessages((prev) =>
-                              prev.includes(message.id)
-                                ? prev.filter((id) => id !== message.id)
-                                : [...prev, message.id]
-                            );
-                          }}
-                          className="mt-2 accent-indigo-500"
-                        />
-
-                        {/* 💬 Message bubble + Voice */}
-                        <div className="flex-1">
-                          <MessageBubble
-                            message={message}
-                            isOwn={isOwn}
-                            sender={sender}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                <div className="chat-log space-y-3">
+                  {loadingMessages ? (
+                    <div className="flex items-center justify-center h-full text-white/60 italic">
+                      Loading messages...
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-white/60 italic">
+                      No messages yet in this room.
+                    </div>
+                  ) : (
+                    messages.map((message, index, arr) => (
+                      <MessageItem
+                        key={message.id ? `${message.id}-${index}` : `msg-${index}`}
+                        message={message}
+                        prevMessage={arr[index - 1]}
+                        soulConfig={soulConfig}
+                        isSelected={selectedMessages.includes(message.id)}
+                        onSelect={(id) => {
+                          setSelectedMessages((prev) =>
+                            prev.includes(id)
+                              ? prev.filter((x) => x !== id)
+                              : [...prev, id]
+                          );
+                        }}
+                      />
+                    ))
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
 
               {/* Voice status */}
               {isVoicePlaying && (
@@ -1558,6 +1130,26 @@ const handleSendMessage = async (
                 <TikTokLogger onSendToSouls={handleSendToSouls} />
               </div>
 
+              {selectedMessages.length > 0 && (
+                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-black/80 border border-white/20 rounded-lg px-4 py-2 flex items-center space-x-4 z-50">
+                  <span className="text-white/70 text-sm">
+                    {selectedMessages.length} selected
+                  </span>
+                  <button
+                    onClick={() => handleSaveSelected()}
+                    className="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-sm"
+                  >
+                    Save to Memory Chest
+                  </button>
+                  <button
+                    onClick={() => setSelectedMessages([])}
+                    className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
               {/* Chat input bar */}
               <MessageInput
                 onSendMessage={handleSendMessage}
@@ -1568,55 +1160,12 @@ const handleSendMessage = async (
         </div>
       </div>
 
-      {/* Sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-[10000] flex">
-          <Sidebar
-            open={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            onReturnHome={() => setShowHomeScreen(true)}
-            currentRoom={currentRoom}
-            selectedSoulsCount={selectedSouls.size}
-            isHomeScreen={false}
-            isVoiceMode={isVoiceMode}
-            onToggleVoiceMode={() => setIsVoiceMode(!isVoiceMode)}
-            isJournalMode={isJournalMode}
-            onToggleJournalMode={() => setIsJournalMode(!isJournalMode)}
-            isEmotionTrackerOpen={showEmotionTracker}
-            onToggleEmotionTracker={() =>
-              setShowEmotionTracker(!showEmotionTracker)
-            }
-            isConversationMode={showConversationMode}
-            onToggleConversationMode={() =>
-              setShowConversationMode(!showConversationMode)
-            }
-            onOpenSoulArchive={() => setShowSoulArchive(true)}
-            onOpenAchievements={() => setShowAchievements(true)}
-            onOpenMemoryChest={() => setShowMemoryChest(true)}
-            onOpenConstellationMap={() => setShowConstellationMap(true)}
-            onOpenBondVisualizer={() => setShowBondVisualizer(true)}
-            onOpenSelfAwarenessTools={() => setShowSelfAwarenessTools(true)}
-            onOpenDataImportExport={() => setShowDataImportExport(true)}
-            onOpenNotificationSettings={() => setShowNotificationSettings(true)}
-            onOpenSleepDreamTracker={() => setShowSleepDreamTracker(true)}
-          />
-          <div
-            className="flex-1 bg-black/50 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-        </div>
-      )}
-
       {showSoulCall && (
         <SoulCallOverlay
           onClose={() => setShowSoulCall(false)}
           onTranscript={(text) => handleSendMessage(text)}
           currentSoul={Array.from(selectedSouls)[0]}  // ✅ added
         />
-      )}
-
-      {showSoulCallTest && (
-        <SoulCallTestOverlay onClose={() => setShowSoulCallTest(false)} />
       )}
 
       {/* Modal Components */}
@@ -1683,7 +1232,7 @@ const handleSendMessage = async (
       <SleepDreamTracker
         isOpen={showSleepDreamTracker}
         onClose={() => setShowSleepDreamTracker(false)}
-      />
+      /> 
     </div>
   )
 }
