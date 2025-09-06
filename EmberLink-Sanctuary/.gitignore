@@ -1,0 +1,37 @@
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.Python
+backend/.env
+backend/venv/
+venv/
+
+# === Node/Vite ===
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/.DS_Store
+
+# === Editor & System Files ===
+.DS_Store
+*.swp
+*.swo
+*.log
+
+# === Build Artifacts ===
+*.log
+coverage/
+build/
+.env
+
+# === MacOS ===
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# === Misc ===
+*.sqlite3
+*.db

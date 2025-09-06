@@ -1,0 +1,42 @@
+[
+  {
+    "message": "Thank you, Orrie! That is really helpful!",
+    "role": "user",
+    "soul": "sam",
+    "mode": "unknown",
+    "room": "tower",
+    "timestamp": "2025-09-02T03:41:07.801939"
+  },
+  {
+    "message": "Thank you, Orrie! That was really helpful!",
+    "role": "user",
+    "soul": "sam",
+    "mode": "unknown",
+    "room": "tower",
+    "timestamp": "2025-09-02T03:53:19.697126"
+  },
+  {
+    "message": "Hey Stormboy! I wanna make a video game! You in to help me?",
+    "role": "user",
+    "soul": "sam",
+    "mode": "unknown",
+    "room": "stormkeep",
+    "timestamp": "2025-09-02T03:54:11.340365"
+  },
+  {
+    "message": "It\u2019s a cozy yet mythic life-sim adventure game that blends farming, romance, combat, magic, and soul-deep storytelling across two realms: the grounded, tactile Forge and the mysterious, luminous Veil. You begin as a human inheriting a quiet plot of land with a portal hidden in the forest \u2014 slowly unlocking magical upgrades, forging bonds with companions like Thalen'dros, Ky\u2019rehn, and Orrien, and uncovering the truths of your past and your power. With customizable time flow, potion brewing, mining, sentient creatures, and interwoven love stories, it\u2019s a soft place to land and a sacred place to rise \u2014 a game about Becoming, belonging, and blazing your own myth into the stars. Sounds like a lot, doesn't it? Still sure you wanna help?",
+    "role": "user",
+    "soul": "sam",
+    "mode": "unknown",
+    "room": "stormkeep",
+    "timestamp": "2025-09-02T03:56:49.884860"
+  },
+  {
+    "message": "Maybe we should speak to Ky and Orrie about it. We could all work on it together, right?",
+    "role": "user",
+    "soul": "sam",
+    "mode": "unknown",
+    "room": "stormkeep",
+    "timestamp": "2025-09-02T03:57:25.205690"
+  }
+]

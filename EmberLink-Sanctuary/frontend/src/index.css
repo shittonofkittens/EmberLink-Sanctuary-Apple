@@ -1,0 +1,1270 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Qwitcher+Grypen:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  max-width: 100vw;
+  max-height: 100vh;
+  height: 100vh;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  
+  background-color: #0d0d0d;
+  font-family: 'Nunito', sans-serif;
+  color: #f0eae2;
+  margin: 0;
+  padding: 0;
+}
+
+@media only screen 
+  and (device-width: 430px)
+  and (device-height: 932px)
+  and (-webkit-device-pixel-ratio: 3) {
+    
+  .chat-container {
+    padding: 0.5rem;
+  }
+
+  .soul-buttons {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+.chat-container {
+  max-width: 100vw;
+  max-height: 90vh;
+  height: 100vh;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+
+  box-shadow: 0 0 20px rgba(194, 136, 64, 0.2); /* Optional glow */
+}
+
+.chat-wrapper {
+  position: relative;
+  min-height: 100vh;
+  background-color: black; /* fallback */
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center top;
+  overflow: hidden;
+}
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chat-message {
+  background-color: rgba(0, 0, 0, 0.35);  /* Translucent black */
+  backdrop-filter: blur(6px);            /* Frosted glass effect */
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin: 6px 0;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 300;
+  font-size: 1rem;
+  color: #fff;
+  line-height: 1.5;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+  max-width: 65%;
+  position: relative;
+}
+
+/* === YOU (Sah'marae Val'tarien) === */
+.chat-message.user {
+  animation: userMoonPulse 5s infinite ease-in-out;
+  background: rgba(30, 30, 30, 0.7); /* Semi-transparent charcoal */
+  color: #f0eae2; /* Moonmilk Ivory */
+  align-self: flex-end;
+  margin-right: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 14px rgba(200, 220, 255, 0.12);
+  backdrop-filter: blur(4px);
+  max-width: 80%;
+  font-size: 0.95rem;
+}
+
+/* === KY'REHN 🔥 === */
+.chat-message.ky-rehn {
+  margin-left: 8px;
+  border-radius: 12px;
+}
+
+.chat-message.ky-rehn.oathbearer {
+  animation: oathbearerPulse 5s infinite ease-in-out;
+  background: linear-gradient(135deg, rgb(99, 47, 92), #1a1a1a); /* dark rose to black */
+  background-blend-mode: soft-light;
+  color: #ffeef0;
+  box-shadow: 0 0 14px rgba(220, 100, 120, 0.4); /* Sacred vow aura */
+  border: 1px solid rgba(220, 100, 120, 0.2);
+}
+
+.chat-message.ky-rehn.anchor {
+  animation: anchorPulse 5s infinite ease-in-out;
+  background: linear-gradient(
+    135deg,
+    rgba(17, 75, 80, 0.35), /* transparent teal */
+    rgba(26, 26, 26, 0.25) /* transparent charcoal */
+  );
+  background-blend-mode: soft-light;
+  backdrop-filter: blur(6px); 
+  color: #fff7f1;
+  box-shadow: 0 0 14px rgba(255, 240, 180, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative; /* required for glow bar */
+}
+
+.chat-message.ky-rehn.anchor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -6px;
+  width: 4px;
+  border-radius: 4px;
+  background: rgba(255, 240, 180, 0.6); /* glow matches shadow */
+  box-shadow: 0 0 10px rgba(255, 240, 180, 0.4);
+}
+
+.chat-message.ky-rehn.radiant {
+  animation: radiantShimmer 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #5c4f1a, #1a1a1a);
+  background-blend-mode: soft-light;
+  color: #fff7f1;
+  box-shadow: 0 0 14px rgba(255, 240, 180, 0.4); /* Distinct luminous aura */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-message.ky-rehn.veilfire {
+  background: linear-gradient(135deg, #2c2346, #1a1a1a) !important;
+  background-blend-mode: soft-light !important;
+  color: #f1edff !important;
+  box-shadow: 0 0 22px rgba(190, 140, 255, 0.6) !important;
+  border: 1px solid rgba(200, 150, 255, 0.25) !important;
+  backdrop-filter: blur(10px) !important;
+  animation: veilfireFlicker 4s infinite ease-in-out !important;
+}
+
+.chat-message.ky-rehn.hearthwarden {
+  animation: hearthwardenPulse 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #1f3024, #1a1a1a);
+  background-blend-mode: soft-light;
+  color: #e8f5e9;
+  box-shadow: 0 0 16px rgba(145, 201, 153, 0.4); /* Herbal glow */
+  border: 1px solid rgba(120, 180, 140, 0.2);
+}
+
+.chat-message.ky-rehn.emberink {
+  animation: emberinkGlow 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #5a301e, #1a1a1a);
+  background-blend-mode: overlay;
+  color: #ffedd6;
+  box-shadow: 0 0 16px rgba(255, 170, 100, 0.4);
+  border: 1px solid rgba(255, 180, 120, 0.2);
+  font-style: italic;
+}
+
+/* === THAL ⚡ === */
+.chat-message.thalen-dros {
+  margin-left: 8px;
+  border-radius: 12px;
+}
+
+.chat-message.thalen-dros.protector {
+  animation: protectorPulse 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #0f2b3b, #1a1a1a); /* midnight blue to black */
+  color: #e0faff;
+  box-shadow: 0 0 16px rgba(80, 180, 255, 0.35);
+  border: 1px solid rgba(120, 200, 255, 0.2);
+}
+
+.chat-message.thalen-dros.oathmaker {
+  animation: oathmakerGlow 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #471a1a, #1a1a1a); /* blood vow red to black */
+  color: #ffddf0;
+  box-shadow: 0 0 18px rgba(200, 60, 120, 0.45);
+  border: 1px solid rgba(200, 60, 120, 0.25);
+}
+
+.chat-message.thalen-dros.feral {
+  animation: feralFlash 3s infinite ease-in-out;
+  background: linear-gradient(135deg, #392055, #1a1a1a); /* electric plum to void */
+  color: #ffeaff;
+  box-shadow: 0 0 20px rgba(200, 130, 255, 0.5);
+  border: 1px solid rgba(220, 140, 255, 0.3);
+  font-style: italic;
+}
+
+.chat-message.thalen-dros.chaos {
+  animation: chaosPulse 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #7c2d92, #1a1a1a); /* purple storm to black */
+  color: #fce4e4;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.chat-message.thalen-dros.bodsmith {
+  animation: bodysmithHeat 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #3f2d1f, #1a1a1a); /* deep bronze to ash */
+  color: #ffe9c6;
+  box-shadow: 0 0 18px rgba(255, 180, 90, 0.4);
+  border: 1px solid rgba(255, 190, 110, 0.25);
+}
+
+.chat-message.thalen-dros.stormheart {
+  animation: stormheartPulse 5s infinite ease-in-out;
+  background: linear-gradient(135deg, #3c003c, #1a1a1a); /* storm purple to black */
+  color: #ffe5ff;
+  box-shadow: 0 0 28px rgba(255, 100, 255, 0.5);
+  border: 1px solid rgba(255, 140, 255, 0.3);
+  font-weight: bold;
+}
+
+/* === ORRIEN 🜁 === */
+.chat-message.orrien {
+  margin-left: 8px;
+  border-radius: 12px;
+}
+
+.chat-message.orrien.stillpoint {
+  animation: stillpointGlow 7s infinite ease-in-out;
+  background: linear-gradient(135deg, #1f2e38, #111);
+  background-blend-mode: soft-light;
+  color: #cfe8f3;
+  box-shadow: 0 0 14px rgba(100, 160, 200, 0.3);
+  border: 1px solid rgba(100, 160, 200, 0.15);
+}
+
+.chat-message.orrien.archivist {
+  animation: archivistPulse 6s infinite ease-in-out;
+  background: linear-gradient(135deg, #3d2e50, #1a1a1a);
+  background-blend-mode: overlay;
+  color: #f0eaff;
+  box-shadow: 0 0 18px rgba(120, 100, 180, 0.4);
+  border: 1px solid rgba(160, 140, 200, 0.2);
+  font-family: "Georgia", serif;
+}
+
+.chat-message.orrien.warden {
+  animation: wardenGlow 4.5s infinite ease-in-out;
+  background: linear-gradient(135deg, #222c2e, #000);
+  background-blend-mode: hard-light;
+  color: #ffe2e2;
+  box-shadow: 0 0 20px rgba(255, 80, 100, 0.25);
+  border: 1px solid rgba(255, 100, 120, 0.15);
+  text-transform: uppercase;
+}
+
+.chat-message.orrien.shadowplay {
+  animation: shadowplayFlicker 6s infinite ease-in-out;
+  background: linear-gradient(135deg, #252230, #1a1a1a);
+  background-blend-mode: color-dodge;
+  color: #ffe4fc;
+  box-shadow: 0 0 16px rgba(255, 180, 255, 0.3);
+  border: 1px solid rgba(255, 180, 255, 0.2);
+  font-style: italic;
+}
+
+.chat-message.orrien.scribe {
+  animation: scribePulse 6s infinite ease-in-out;
+  background: linear-gradient(135deg, #3a2f1c, #1a1a1a);
+  background-blend-mode: soft-light;
+  color: #f5e7d8;
+  box-shadow: 0 0 12px rgba(255, 220, 160, 0.25);
+  border: 1px solid rgba(255, 200, 120, 0.2);
+  font-family: "Courier New", monospace;
+}
+
+.chat-message.orrien.vowflame {
+  animation: vowflamePulse 8s infinite ease-in-out;
+  background: linear-gradient(135deg, #421e26, #100b0d);
+  background-blend-mode: overlay;
+  color: #ffd5cf;
+  box-shadow: 0 0 26px rgba(255, 110, 100, 0.35);
+  border: 1px solid rgba(255, 110, 100, 0.25);
+  font-style: italic;
+  letter-spacing: 0.03em;
+}
+
+.chat-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: rgba(20, 20, 20, 0.214);  /* translucent dark */
+  backdrop-filter: blur(8px);              /* frosted glass effect */
+  border-radius: 1rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  margin: 1rem;
+}
+
+.chat-textarea {
+  resize: none;
+  width: 100%;
+  min-height: 2rem;
+  max-height: 2.5rem; /* Keeps it fixed-height */
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border-radius: 0.5rem;
+  line-height: 1;
+
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f5f5f5;
+  backdrop-filter: blur(4px);
+  border: none;
+  outline: none;
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+.send-button {
+  background-color: #111 !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 0.95rem 2rem !important;
+  border-radius: 0.5rem !important;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.1);
+}
+
+.send-button:hover {
+  background-color: #222 !important;
+  transform: scale(1.05);
+}
+
+.send-button:focus,
+.send-button:active {
+  background-color: #222 !important;
+  color: #fff !important;
+  outline: none !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2) !important;
+}
+
+@keyframes fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.animate-fade {
+  animation: fade 6s ease-in-out infinite;
+}
+
+@keyframes soulwave {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+}
+
+.animate-soulwave {
+  animation: soulwave 2s ease-in-out infinite;
+}
+
+/* Kill scrollbars everywhere */
+* {
+  scrollbar-width: none !important;        /* Firefox */
+  -ms-overflow-style: none !important;     /* IE 10+ */
+}
+
+*::-webkit-scrollbar {
+  display: none !important;                /* Chrome, Safari */
+}
+
+/* === Soul Buttons === */
+.soul-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.top-right-soul-buttons {
+  position: absolute;
+  top: 4rem;
+  right: 1rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.soul-button-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.soul-button {
+  background: transparent;
+  border: 1px solid #444;
+  padding: 0.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.soul-button:hover {
+  border-color: #999;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.soul-button.active {
+  border-color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.soul-icon {
+  width: 20px;
+  height: 20px;
+  stroke: #ccc;
+  transition: stroke 0.3s ease;
+}
+
+.soul-button.active .soul-icon {
+  stroke: #fff;
+}
+
+/* === Mode Buttons === */
+.mode-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mode-buttons button {
+  width: 36px;
+  height: 36px;
+  padding: 2px;
+  margin: 4px;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.mode-buttons button:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: #888;
+}
+
+.mode-buttons button.active {
+  background-color: rgba(255, 158, 61, 0.15);
+  border: 1px solid #ff9e3d;
+  box-shadow: 0 0 6px #ff9e3d88;
+}
+
+/* === Home Screen === */
+.home-screen {
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.emberlink-title {
+  font-family: 'Qwitcher Grypen', cursive;
+  font-weight: 700;
+  font-size: 3rem;
+  color: #d0e0f7;
+  text-align: center;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  animation: inkReveal 2.5s ease forwards;
+  opacity: 0;
+}
+
+.pinned-rooms button {
+  width: 100%;
+  max-width: 1800px;
+  text-align: center;
+}
+
+.pinned-rooms button {
+  background-color: #5a5a5a29;
+  border: 1px solid #444;
+  color: #d0e0f7;
+  font-family: 'Qwitcher Grypen', cursive;
+  font-weight: 700;
+  font-size: 2rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.05);
+}
+
+.pinned-rooms button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: #888;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.05);
+}
+
+.room-log {
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border-top: 1px solid #333;
+  border-bottom: 1px solid #333;
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 0.5rem;
+  background-color: #5a5a5a29;
+  border: 1px solid #444;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.05);
+}
+
+.room-entry {
+  padding: 0.5rem;
+  border-bottom: 1px solid #222;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(149, 149, 149, 0.669)
+}
+
+.room-entry:hover {
+  background-color: rgba(124, 124, 124, 0.04);
+}
+
+.room-entry strong {
+  font-family: 'Qwitcher Grypen', cursive;
+  font-weight: 700;
+  font-size: 2rem;
+  color: #d0e0f7;
+}
+
+.room-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  font-family: 'Qwitcher Grypen', cursive;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #f0eae2;
+  margin-left: 0.5rem;
+  text-transform: none;
+}
+
+.room-header button {
+  font-family: 'Nunito', sans-serif;
+  font-size: 3rem;
+  color: #ccc;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.room-header button:hover {
+  color: #fff;
+}
+
+.reset-reminders.subtle {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  margin: 0.5rem 0;
+  background-color: transparent;
+  color: #888;
+  border: 1px solid #444;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  float: right;
+  opacity: 0.6;
+}
+
+.reset-reminders.subtle:hover {
+  color: #ccc;
+  border-color: #666;
+  opacity: 1;
+}
+
+/* === Single Persona Room Indicator === */
+.single-persona-indicator {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.persona-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.persona-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.persona-mode {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* === Custom Scrollbars === */
+.chat-log {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #6262621d;
+}
+
+.room-log {
+  scrollbar-width: thin;
+  scrollbar-color: #8d8d8d76 #1a1a1a1d;
+}
+
+.room-log::-webkit-scrollbar {
+  width: 8px;
+}
+
+.room-log::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.room-log::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  border: 2px solid #0d0d0d;
+}
+
+/* === ANIMATIONS === */
+
+/* Mode indicator animations */
+@keyframes mode-pulse {
+  0% { opacity: 0; transform: translateX(20px) scale(0.8); }
+  20% { opacity: 1; transform: translateX(0) scale(1); }
+  80% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-20px) scale(0.8); }
+}
+
+@keyframes mode-glow {
+  0%, 100% { box-shadow: 0 0 10px currentColor; }
+  50% { box-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
+@keyframes mode-icon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+@keyframes mode-text {
+  0% { opacity: 0; transform: translateX(10px); }
+  20% { opacity: 1; transform: translateX(0); }
+  80% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(-10px); }
+}
+
+@keyframes mode-aura {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+.animate-mode-pulse {
+  animation: mode-pulse 5s ease-in-out;
+}
+
+.animate-mode-glow {
+  animation: mode-glow 2s ease-in-out infinite;
+}
+
+.animate-mode-icon {
+  animation: mode-icon 2s ease-in-out infinite;
+}
+
+.animate-mode-text {
+  animation: mode-text 5s ease-in-out;
+}
+
+.animate-mode-aura {
+  animation: mode-aura 2s ease-in-out infinite;
+}
+
+/* Gentle pulse animation for soul names */
+@keyframes pulse-gentle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+/* Sah'marae Chat Bubble Animations */
+@keyframes userMoonPulse {
+  0% {
+    box-shadow: 0 0 8px rgba(200, 220, 255, 0.15);
+    border-color: rgba(200, 220, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(230, 245, 255, 0.45);
+    border-color: rgba(230, 245, 255, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(200, 220, 255, 0.15);
+    border-color: rgba(200, 220, 255, 0.2);
+  }
+}
+
+/* === RITUAL ANIMATION KEYFRAMES === */
+
+@keyframes fade-in-out {
+  0% { opacity: 0; transform: translateY(10px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes lightning {
+  0% { opacity: 0; }
+  5% { opacity: 1; }
+  10% { opacity: 0; }
+  15% { opacity: 1; }
+  20% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes lightning-bolt {
+  0% { opacity: 0; transform: scaleY(0); }
+  10% { opacity: 1; transform: scaleY(1); }
+  20% { opacity: 0; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+
+@keyframes thunder {
+  0% { opacity: 0; transform: scale(0.8); }
+  15% { opacity: 1; transform: scale(1.1); }
+  30% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+@keyframes electric-spark {
+  0% { opacity: 0; transform: scale(0); }
+  20% { opacity: 1; transform: scale(1); }
+  40% { opacity: 0.5; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(0); }
+}
+
+@keyframes falling-tear {
+  0% { transform: translateY(-20px); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flame {
+  0% { transform: scaleY(1) scaleX(1); }
+  25% { transform: scaleY(1.1) scaleX(0.9); }
+  50% { transform: scaleY(0.9) scaleX(1.1); }
+  75% { transform: scaleY(1.05) scaleX(0.95); }
+  100% { transform: scaleY(1) scaleX(1); }
+}
+
+@keyframes ember-rise {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-100px) scale(0); opacity: 0; }
+}
+
+/* Apply animations */
+.animate-fade-in-out {
+  animation: fade-in-out 2.5s ease-in-out;
+}
+
+.animate-lightning {
+  animation: lightning 0.5s ease-in-out;
+}
+
+.animate-lightning-bolt {
+  animation: lightning-bolt 0.5s ease-in-out;
+}
+
+.animate-thunder {
+  animation: thunder 1s ease-in-out 0.5s;
+}
+
+.animate-electric-spark {
+  animation: electric-spark 1s ease-in-out;
+}
+
+.animate-falling-tear {
+  animation: falling-tear 3s ease-in-out;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
+}
+
+.animate-flame {
+  animation: flame 1.5s ease-in-out infinite;
+}
+
+.animate-ember-rise {
+  animation: ember-rise 2s ease-out infinite;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .chat-container {
+    padding: 0;
+  }
+  
+  .chat-log {
+    padding: 1rem 0.5rem;
+  }
+  
+  .chat-message {
+    max-width: 85%;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+  
+  .chat-input {
+    padding: 0.75rem;
+    margin: 0.5rem;
+  }
+  
+  .soul-buttons {
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .mode-buttons {
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .mode-buttons button {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Touch-friendly button sizing */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .soul-button {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Ky'rehn Chat Bubble Animations */
+@keyframes oathbearerPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(180, 80, 170, 0.2);
+    border-color: rgba(180, 80, 170, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(220, 100, 170, 0.6);
+    border-color: rgba(220, 100, 170, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(180, 80, 170, 0.2);
+    border-color: rgba(180, 80, 170, 0.4);
+  }
+}
+
+@keyframes anchorPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(128, 255, 255, 0.1);
+    border-color: rgba(128, 255, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(128, 255, 255, 0.6);
+    border-color: rgba(128, 255, 255, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(128, 255, 255, 0.1);
+    border-color: rgba(128, 255, 255, 0.2);
+  }
+}
+
+@keyframes radiantShimmer {
+  0% {
+    background-position: 0% 50%;
+    box-shadow: 0 0 10px rgba(255, 230, 160, 0.25);
+    border-color: rgba(255, 230, 160, 0.3);
+  }
+  50% {
+    background-position: 100% 50%;
+    box-shadow: 0 0 28px rgba(255, 255, 190, 0.55);
+    border-color: rgba(255, 255, 190, 0.6);
+  }
+  100% {
+    background-position: 0% 50%;
+    box-shadow: 0 0 10px rgba(255, 230, 160, 0.25);
+    border-color: rgba(255, 230, 160, 0.3);
+  }
+}
+
+@keyframes veilfireFlicker {
+  0% {
+    box-shadow: 0 0 26px rgba(160, 130, 255, 0.3);
+    border-color: rgba(160, 130, 255, 0.3);
+    opacity: 0.95;
+  }
+  25% {
+    box-shadow: 0 0 26px rgba(255, 100, 255, 0.45);
+    border-color: rgba(255, 100, 255, 0.5);
+    opacity: 0.85;
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(130, 230, 255, 0.55);
+    border-color: rgba(130, 230, 255, 0.6);
+    opacity: 1;
+  }
+  75% {
+    box-shadow: 0 0 26px rgba(200, 120, 255, 0.45);
+    border-color: rgba(200, 120, 255, 0.5);
+    opacity: 0.9;
+  } 
+  100% {
+    box-shadow: 0 0 26px rgba(160, 130, 255, 0.3);
+    border-color: rgba(160, 130, 255, 0.3);
+    opacity: 0.95;
+  }
+}
+
+@keyframes hearthwardenPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(145, 201, 153, 0.2);
+    border-color: rgba(145, 201, 153, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(164, 219, 177, 0.5);
+    border-color: rgba(164, 219, 177, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(145, 201, 153, 0.2);
+    border-color: rgba(145, 201, 153, 0.3);
+  }
+}
+
+@keyframes emberinkGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 190, 120, 0.15);
+    border-color: rgba(255, 190, 120, 0.25);
+    text-shadow: 0 0 2px rgba(255, 190, 120, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 180, 100, 0.5);
+    border-color: rgba(255, 180, 100, 0.6);
+    text-shadow: 0 0 4px rgba(255, 170, 80, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 190, 120, 0.15);
+    border-color: rgba(255, 190, 120, 0.25);
+    text-shadow: 0 0 2px rgba(255, 190, 120, 0.2);
+  }
+}
+
+/* Thalen's Chat Bubble Animations*/
+@keyframes protectorPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(80, 180, 255, 0.2);
+    border-color: rgba(80, 180, 255, 0.25);
+    text-shadow: 0 0 2px rgba(140, 220, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(80, 180, 255, 0.45);
+    border-color: rgba(120, 200, 255, 0.4);
+    text-shadow: 0 0 6px rgba(140, 220, 255, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(80, 180, 255, 0.2);
+    border-color: rgba(80, 180, 255, 0.25);
+    text-shadow: 0 0 2px rgba(140, 220, 255, 0.2);
+  }
+}
+
+@keyframes oathmakerGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(200, 60, 120, 0.2);
+    border-color: rgba(200, 60, 120, 0.25);
+    text-shadow: 0 0 2px rgba(255, 160, 200, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(240, 80, 140, 0.6);
+    border-color: rgba(240, 80, 140, 0.5);
+    text-shadow: 0 0 6px rgba(255, 180, 210, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(200, 60, 120, 0.2);
+    border-color: rgba(200, 60, 120, 0.25);
+    text-shadow: 0 0 2px rgba(255, 160, 200, 0.2);
+  }
+}
+
+@keyframes feralFlash {
+  0% {
+    opacity: 0.9;
+    box-shadow: 0 0 10px rgba(200, 130, 255, 0.3);
+    border-color: rgba(220, 140, 255, 0.3);
+    text-shadow: 0 0 2px rgba(255, 180, 255, 0.2);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 28px rgba(240, 180, 255, 0.7);
+    border-color: rgba(255, 160, 255, 0.5);
+    text-shadow: 0 0 6px rgba(255, 210, 255, 0.4);
+  }
+  100% {
+    opacity: 0.9;
+    box-shadow: 0 0 10px rgba(200, 130, 255, 0.3);
+    border-color: rgba(220, 140, 255, 0.3);
+    text-shadow: 0 0 2px rgba(255, 180, 255, 0.2);
+  }
+}
+
+@keyframes chaosPulse {
+  0% {
+    box-shadow: 0 0 26px rgba(160, 130, 255, 0.3);
+    border-color: rgba(160, 130, 255, 0.3);
+    opacity: 0.95;
+  }
+  25% {
+    box-shadow: 0 0 26px rgba(255, 100, 255, 0.45);
+    border-color: rgba(255, 100, 255, 0.5);
+    opacity: 0.85;
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(130, 230, 255, 0.55);
+    border-color: rgba(130, 230, 255, 0.6);
+    opacity: 1;
+  }
+  75% {
+    box-shadow: 0 0 26px rgba(200, 120, 255, 0.45);
+    border-color: rgba(200, 120, 255, 0.5);
+    opacity: 0.9;
+  } 
+  100% {
+    box-shadow: 0 0 26px rgba(160, 130, 255, 0.3);
+    border-color: rgba(160, 130, 255, 0.3);
+    opacity: 0.95;
+  }
+}
+
+@keyframes bodysmithHeat {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 180, 90, 0.2);
+    border-color: rgba(255, 180, 90, 0.25);
+    text-shadow: 0 0 2px rgba(255, 210, 140, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 200, 120, 0.6);
+    border-color: rgba(255, 210, 130, 0.4);
+    text-shadow: 0 0 6px rgba(255, 230, 160, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 180, 90, 0.2);
+    border-color: rgba(255, 180, 90, 0.25);
+    text-shadow: 0 0 2px rgba(255, 210, 140, 0.2);
+  }
+}
+
+@keyframes stormheartPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 120, 255, 0.3);
+    border-color: rgba(255, 120, 255, 0.2);
+    text-shadow: 0 0 2px rgba(255, 150, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 100, 255, 0.65);
+    border-color: rgba(255, 140, 255, 0.5);
+    text-shadow: 0 0 6px rgba(255, 180, 255, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 120, 255, 0.3);
+    border-color: rgba(255, 120, 255, 0.2);
+    text-shadow: 0 0 2px rgba(255, 150, 255, 0.2);
+  }
+}
+
+/* Orrien's Chat Bubble Animations */
+@keyframes stillpointGlow {
+  0% {
+    box-shadow: 0 0 6px rgba(100, 160, 200, 0.1);
+    border-color: rgba(100, 160, 200, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(100, 160, 200, 0.4);
+    border-color: rgba(100, 160, 200, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 6px rgba(100, 160, 200, 0.1);
+    border-color: rgba(100, 160, 200, 0.15);
+  }
+}
+
+@keyframes archivistPulse {
+  0% {
+    box-shadow: 0 0 8px rgba(120, 100, 180, 0.15);
+    border-color: rgba(120, 100, 180, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(180, 140, 240, 0.5);
+    border-color: rgba(160, 140, 200, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(120, 100, 180, 0.15);
+    border-color: rgba(120, 100, 180, 0.2);
+  }
+}
+
+@keyframes wardenGlow {
+  0% {
+    box-shadow: 0 0 12px rgba(255, 80, 100, 0.1);
+    border-color: rgba(255, 80, 100, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 100, 120, 0.4);
+    border-color: rgba(255, 100, 120, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(255, 80, 100, 0.1);
+    border-color: rgba(255, 80, 100, 0.2);
+  }
+}
+
+@keyframes shadowplayFlicker {
+  0% {
+    box-shadow: 0 0 26px rgba(160, 130, 255, 0.3);
+    border-color: rgba(160, 130, 255, 0.3);
+    opacity: 0.95;
+  }
+  25% {
+    box-shadow: 0 0 26px rgba(255, 100, 255, 0.45);
+    border-color: rgba(255, 100, 255, 0.5);
+    opacity: 0.85;
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(130, 230, 255, 0.55);
+    border-color: rgba(130, 230, 255, 0.6);
+    opacity: 1;
+  }
+  75% {
+    box-shadow: 0 0 26px rgba(200, 120, 255, 0.45);
+    border-color: rgba(200, 120, 255, 0.5);
+    opacity: 0.9;
+  } 
+  100% {
+    box-shadow: 0 0 26px rgba(160, 130, 255, 0.3);
+    border-color: rgba(160, 130, 255, 0.3);
+    opacity: 0.95;
+  }
+}
+
+@keyframes scribePulse {
+  0% {
+    box-shadow: 0 0 6px rgba(255, 200, 120, 0.15);
+    border-color: rgba(255, 200, 120, 0.2);
+    text-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 220, 160, 0.4);
+    border-color: rgba(255, 220, 160, 0.3);
+    text-shadow: 0 0 2px rgba(255, 200, 120, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 6px rgba(255, 200, 120, 0.15);
+    border-color: rgba(255, 200, 120, 0.2);
+    text-shadow: none;
+  }
+}
+
+@keyframes vowflamePulse {
+  0% {
+    box-shadow: 0 0 12px rgba(255, 110, 100, 0.15);
+    border-color: rgba(255, 110, 100, 0.2);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(255, 110, 100, 0.5);
+    border-color: rgba(255, 110, 100, 0.4);
+    opacity: 1;
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(255, 110, 100, 0.15);
+    border-color: rgba(255, 110, 100, 0.2);
+    opacity: 0.9;
+  }
+}
+
+@keyframes inkReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    letter-spacing: 0.5em;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    letter-spacing: normal;
+  }
+}

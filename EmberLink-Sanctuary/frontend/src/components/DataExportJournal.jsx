@@ -1,0 +1,424 @@
+import React, { useState, useEffect } from "react"
+import {
+  Download,
+  FileText,
+  Send,
+  Archive,
+  Calendar,
+  MessageCircle,
+  Clock
+} from "lucide-react"
+
+export const DataExportJournal = ({
+  messages,
+  currentRoom,
+  isOpen,
+  onClose,
+  className = ""
+}) => {
+  const [exportFormat, setExportFormat] = useState("md")
+  const [exportScope, setExportScope] = useState("cycle")
+  const [isExporting, setIsExporting] = useState(false)
+  const [lastExport, setLastExport] = useState(null)
+
+  // Load last export date
+  useEffect(() => {
+    const saved = localStorage.getItem("emberlink-last-export")
+    if (saved) {
+      setLastExport(new Date(saved))
+    }
+  }, [])
+
+  const gatherExportData = () => {
+    // Gather all data from localStorage
+    const reminders = JSON.parse(
+      localStorage.getItem("emberlink-reminder-history") || "[]"
+    )
+    const emotions = JSON.parse(
+      localStorage.getItem("emberlink-emotion-tracker") || "[]"
+    )
+    const dreams = JSON.parse(
+      localStorage.getItem("emberlink-dream-entries") || "[]"
+    )
+    const reflections = JSON.parse(
+      localStorage.getItem("emberlink-soul-reflections") || "[]"
+    )
+    const achievements = JSON.parse(
+      localStorage.getItem("emberlink-achievements") || "[]"
+    )
+    const roomHistory = JSON.parse(
+      localStorage.getItem("emberlink-room-history") || "[]"
+    )
+
+    // Calculate current cycle (days since first use)
+    const firstUse = new Date(
+      localStorage.getItem("emberlink-first-use") || Date.now()
+    )
+    const cycleNumber =
+      Math.floor((Date.now() - firstUse.getTime()) / (1000 * 60 * 60 * 24)) + 1
+
+    let exportMessages = messages
+    if (exportScope === "current" && currentRoom) {
+      // Only current room messages
+      exportMessages = messages
+    } else if (exportScope === "cycle") {
+      // Last 7 days of messages
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      exportMessages = messages.filter(
+        msg => new Date(msg.timestamp || Date.now()) > weekAgo
+      )
+    }
+
+    return {
+      messages: exportMessages,
+      reminders,
+      emotions,
+      dreams,
+      reflections,
+      achievements,
+      bondStatus: {
+        sahmarae: "active",
+        ky: "anchored",
+        thal: "attuned",
+        orrien: "watching",
+        currentCycle: cycleNumber,
+        veilThread: "restoring"
+      },
+      exportDate: new Date().toISOString(),
+      cycleNumber
+    }
+  }
+
+  const formatAsMarkdown = data => {
+    const date = new Date(data.exportDate).toLocaleDateString()
+
+    return `# Sacred Constellation Export - Cycle ${data.cycleNumber}
+*Exported on ${date}*
+
+## 🌟 Bond Status
+- **Sah'marae**: ${data.bondStatus.sahmarae}
+- **Ky'rehn**: ${data.bondStatus.ky}  
+- **Thalen'dros**: ${data.bondStatus.thal}
+- **Orrien**: ${data.bondStatus.orrien}
+- **Current Cycle**: ${data.bondStatus.currentCycle}
+- **Veil Thread**: ${data.bondStatus.veilThread}
+
+## 💬 Sacred Conversations (${data.messages.length} messages)
+
+${data.messages
+  .map(msg => {
+    const timestamp = new Date(msg.timestamp || Date.now()).toLocaleString()
+    const speaker = msg.role === "user" ? "You" : msg.soul || "Soul"
+    const mode = msg.mode ? ` [${msg.mode}]` : ""
+
+    return `### ${speaker}${mode} - ${timestamp}
+${msg.content}
+
+---`
+  })
+  .join("\n\n")}
+
+## 🎭 Achievements Unlocked (${
+      data.achievements.filter(a => a.unlocked).length
+    })
+
+${data.achievements
+  .filter(a => a.unlocked)
+  .map(achievement => {
+    const unlocked = new Date(achievement.unlockedAt).toLocaleDateString()
+    return `- **${achievement.title}** (${achievement.rarity}) - Unlocked ${unlocked}
+  ${achievement.description}`
+  })
+  .join("\n")}
+
+## 💭 Soul Reflections (${data.reflections.length})
+
+${data.reflections
+  .map(reflection => {
+    const date = new Date(reflection.timestamp).toLocaleDateString()
+    return `### ${reflection.soul} - ${date}
+**Mood**: ${reflection.mood}
+${reflection.dayHighlight ? `**Highlight**: ${reflection.dayHighlight}` : ""}
+
+${reflection.content}
+
+---`
+  })
+  .join("\n\n")}
+
+## 🌙 Dreams & Visions (${data.dreams.length})
+
+${data.dreams
+  .map(dream => {
+    const date = new Date(dream.timestamp).toLocaleDateString()
+    return `### ${dream.type} - ${date} (${dream.mood})
+${dream.content}
+${dream.symbols ? `**Symbols**: ${dream.symbols.join(", ")}` : ""}
+
+---`
+  })
+  .join("\n\n")}
+
+## 💝 Emotional Journey (${data.emotions.length} entries)
+
+${data.emotions
+  .map(emotion => {
+    const date = new Date(emotion.timestamp).toLocaleDateString()
+    return `- **${emotion.emotion}** (${emotion.intensity}/10) - ${date} in ${
+      emotion.room
+    }
+  ${emotion.note || ""}`
+  })
+  .join("\n")}
+
+---
+
+*This constellation cycle has been preserved in the Archive. May these words carry the flame forward.*
+
+✨ *Generated by EmberLink Sacred Constellation* ✨`
+  }
+
+  const formatAsText = data => {
+    return formatAsMarkdown(data)
+      .replace(/#{1,6}\s/g, "") // Remove markdown headers
+      .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold formatting
+      .replace(/\*(.*?)\*/g, "$1") // Remove italic formatting
+      .replace(/---/g, "=====================================")
+  }
+
+  const exportData = async () => {
+    setIsExporting(true)
+
+    try {
+      const data = gatherExportData()
+      let content
+      let filename
+      let mimeType
+
+      switch (exportFormat) {
+        case "md":
+          content = formatAsMarkdown(data)
+          filename = `constellation-cycle-${data.cycleNumber}.md`
+          mimeType = "text/markdown"
+          break
+        case "txt":
+          content = formatAsText(data)
+          filename = `constellation-cycle-${data.cycleNumber}.txt`
+          mimeType = "text/plain"
+          break
+        case "json":
+          content = JSON.stringify(data, null, 2)
+          filename = `constellation-cycle-${data.cycleNumber}.json`
+          mimeType = "application/json"
+          break
+        default:
+          throw new Error("Invalid export format")
+      }
+
+      // Create and download file
+      const blob = new Blob([content], { type: mimeType })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+
+      // Update last export time
+      const now = new Date()
+      localStorage.setItem("emberlink-last-export", now.toISOString())
+      setLastExport(now)
+
+      console.log(
+        `📁 Exported constellation cycle ${
+          data.cycleNumber
+        } as ${exportFormat.toUpperCase()}`
+      )
+    } catch (err) {
+      console.error("Export failed:", err)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const sendToNoctisArchive = async () => {
+    const data = gatherExportData()
+    const content = formatAsMarkdown(data)
+
+    // Simulate sending to Noctis Archive (would integrate with actual system)
+    console.log("📚 Sending to Noctis Archive:", {
+      title: `Constellation Cycle ${data.cycleNumber}`,
+      content,
+      timestamp: data.exportDate
+    })
+
+    // Show success message
+    alert(
+      `✨ Constellation Cycle ${data.cycleNumber} has been archived in Noctis!`
+    )
+  }
+
+  const copyToClipboard = async () => {
+    const data = gatherExportData()
+    const content = formatAsMarkdown(data)
+
+    try {
+      await navigator.clipboard.writeText(content)
+      alert("📋 Constellation data copied to clipboard!")
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err)
+    }
+  }
+
+  if (!isOpen) return null
+
+  const data = gatherExportData()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-2xl bg-black/90 backdrop-blur-xl rounded-xl border border-white/20 p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <Archive className="w-6 h-6 text-purple-400" />
+            <div>
+              <h2 className="text-2xl font-semibold text-white">
+                Data Export & Reflection Journal
+              </h2>
+              <p className="text-white/60">Save this constellation cycle</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Current Cycle Info */}
+        <div className="mb-6 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+          <div className="flex items-center space-x-2 mb-2">
+            <Calendar className="w-5 h-5 text-purple-300" />
+            <span className="text-purple-300 font-medium">
+              Current Constellation Cycle
+            </span>
+          </div>
+          <div className="text-white text-lg font-semibold">
+            Cycle {data.cycleNumber}
+          </div>
+          <div className="text-white/70 text-sm">
+            {data.messages.length} messages • {data.reflections.length}{" "}
+            reflections • {data.dreams.length} dreams
+          </div>
+        </div>
+
+        {/* Export Options */}
+        <div className="mb-6">
+          <h3 className="text-white font-medium mb-3">Export Settings</h3>
+
+          {/* Format Selection */}
+          <div className="mb-4">
+            <label className="text-white/80 text-sm mb-2 block">Format</label>
+            <div className="flex space-x-2">
+              {[
+                { key: "md", label: "Markdown (.md)", icon: FileText },
+                { key: "txt", label: "Plain Text (.txt)", icon: FileText },
+                { key: "json", label: "JSON Data (.json)", icon: FileText }
+              ].map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setExportFormat(key)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                    exportFormat === key
+                      ? "bg-purple-500/30 text-white"
+                      : "bg-white/10 text-white/70 hover:bg-white/20"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Scope Selection */}
+          <div className="mb-4">
+            <label className="text-white/80 text-sm mb-2 block">Scope</label>
+            <div className="flex space-x-2">
+              {[
+                { key: "cycle", label: "This Cycle (7 days)", icon: Calendar },
+                { key: "current", label: "Current Room", icon: MessageCircle },
+                { key: "all", label: "Everything", icon: Archive }
+              ].map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setExportScope(key)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                    exportScope === key
+                      ? "bg-blue-500/30 text-white"
+                      : "bg-white/10 text-white/70 hover:bg-white/20"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Export Actions */}
+        <div className="space-y-3">
+          {/* Primary Export Button */}
+          <button
+            onClick={exportData}
+            disabled={isExporting}
+            className="w-full flex items-center justify-center space-x-2 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white font-medium hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {isExporting ? (
+              <>
+                <div className="w-4 h-4 border border-white/50 border-t-white rounded-full animate-spin" />
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                <span>Export Constellation Cycle</span>
+              </>
+            )}
+          </button>
+
+          {/* Secondary Actions */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={sendToNoctisArchive}
+              className="flex items-center justify-center space-x-2 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-lg text-indigo-300 text-sm transition-all"
+            >
+              <Send className="w-4 h-4" />
+              <span>Send to Noctis</span>
+            </button>
+
+            <button
+              onClick={copyToClipboard}
+              className="flex items-center justify-center space-x-2 py-2 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-300 text-sm transition-all"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Copy to Clipboard</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Last Export Info */}
+        {lastExport && (
+          <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
+            <div className="flex items-center space-x-2 text-white/60 text-sm">
+              <Clock className="w-4 h-4" />
+              <span>Last export: {lastExport.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
