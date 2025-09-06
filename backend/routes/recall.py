@@ -243,3 +243,29 @@ def load_recent_seed_context(seed_paths, count=6):
     return all_messages[-count:]  # Final slice to trim if too many
 # === P71: LOAD RECENT CONTEXT FROM MULTIPLE SEED FILES END ===
 
+@recall_bp.route("/edit", methods=["POST"])
+def edit_seed_entry():
+    data = request.get_json()
+    file = data.get("file")
+    index = data.get("index")  # which entry in the JSON
+    new_message = data.get("message")
+
+    if not file or not os.path.exists(file):
+        return jsonify({"error": "Seed file not found"}), 404
+
+    try:
+        with open(file, "r") as f:
+            entries = json.load(f)
+
+        if index < 0 or index >= len(entries):
+            return jsonify({"error": "Index out of range"}), 400
+
+        entries[index]["message"] = new_message  # ✨ overwrite message
+
+        with open(file, "w") as f:
+            json.dump(entries, f, indent=2)
+
+        return jsonify({"status": "updated", "entry": entries[index]})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
