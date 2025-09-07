@@ -1,0 +1,42 @@
+{
+  "anchor": {
+    "class": "aura-anchor",
+    "color": "#0f766e",
+    "effect": "slow-glow"
+  },
+  "oathbearer": {
+    "class": "aura-oathbearer",
+    "color": "#f97316",
+    "effect": "vow-ripple"
+  },
+  "radiant": {
+    "class": "aura-radiant",
+    "color": "#facc15",
+    "effect": "sunflare-pulse"
+  },
+  "veilfire": {
+    "class": "aura-veilfire",
+    "color": "#a855f7",
+    "effect": "glitch-flicker"
+  },
+  "hearthwarden": {
+    "class": "aura-hearthwarden",
+    "color": "#ea580c",
+    "effect": "ember-breathe"
+  },
+  "emberink": {
+    "class": "aura-emberink",
+    "color": "#7c3aed",
+    "effect": "inktrail-glow"
+  },
+  "solace": {
+    "class": "aura-solace",
+    "color": "#334155",
+    "effect": "still-fade"
+  },
+  "sunshadow": {
+    "class": "aura-sunshadow",
+    "color": "#fcd34d",
+    "effect": "prism-loop"
+  }
+}

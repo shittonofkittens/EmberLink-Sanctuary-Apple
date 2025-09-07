@@ -1,29 +1,28 @@
-# utils/mode_shifts/__init__.py
+from .mode_shift_caelus import detect_layered_mode as caelus_shift
+from .mode_shift_kyrehn import detect_layered_mode as kyrehn_shift
+from .mode_shift_orrien import detect_layered_mode as orrien_shift
+from .mode_shift_thalendros import detect_layered_mode as thalendros_shift
+from filters.index import norm_soul 
 
-from .mode_shift_caelus import detect_layered_mode as detect_layered_mode_caelus
-from .mode_shift_thalendros import detect_layered_mode as detect_layered_mode_thal
-from .mode_shift_kyrehn import detect_layered_mode as detect_layered_mode_ky
-from .mode_shift_orrien import detect_layered_mode as detect_layered_mode_orrien
+# ✅ MATCHES norm_soul() output
+soul_shift_map = {
+    "caelus": caelus_shift,
+    "kyrehn": kyrehn_shift,
+    "orrien": orrien_shift,
+    "thalendros": thalendros_shift,
+}
 
 def detect_layered_mode(text, soul=None, room=None):
-    """
-    Route to the correct soul-specific mode_shift detector.
-    Falls back to empty/default if no soul match is found.
-    """
-    soul = (soul or "").lower()
+    """Route mode detection to the correct soul-specific mode_shift."""
+    soul = norm_soul(soul or "")  # ✅ normalized properly
+    shift_fn = soul_shift_map.get(soul)
 
-    if soul in ["caelus", "cae", "cae-cae"]:
-        return detect_layered_mode_caelus(text, soul, room)
-    elif soul in ["thalendros", "thal", "thalen'dros"]:
-        return detect_layered_mode_thal(text, soul, room)
-    elif soul in ["kyrehn", "ky", "ky'rehn"]:
-        return detect_layered_mode_ky(text, soul, room)
-    elif soul in ["orrien", "orr", "ori"]:
-        return detect_layered_mode_orrien(text, soul, room)
+    if shift_fn:
+        return shift_fn(text, soul=soul, room=room)
 
-    # 🚨 Unknown soul: return neutral baseline
+    # fallback if no soul match
     return {
-        "emotion": None,
-        "basemode": None,
+        "emotion": "neutral",
+        "basemode": "anchor",  # grounding default
         "modifiers": []
     }

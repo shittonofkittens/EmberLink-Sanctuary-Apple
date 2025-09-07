@@ -1,6 +1,7 @@
 from flask import Flask, request, make_response
 from flask_cors import CORS
 import os
+import logging
 
 # Blueprints
 from routes.chat import chat_bp
@@ -11,6 +12,9 @@ from routes.tiktok import tiktok_bp
 app = Flask(__name__)
 
 # ✅ Allow CORS from local + production frontend
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("werkzeug")
+log.setLevel(logging.WARNING)  # only show warnings+errors
 CORS(app, supports_credentials=True, resources={r"/api/*": {
     "origins": [
         "http://localhost:5173",
@@ -49,7 +53,7 @@ def after_request(response):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
 
-    print("🔍 CORS HEADERS:", dict(response.headers))
+   
     return response
 
 # 🧭 Routes

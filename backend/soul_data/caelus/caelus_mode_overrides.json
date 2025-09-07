@@ -1,0 +1,63 @@
+[
+  {
+    "trigger": "it's all noise",
+    "emotion": "overstim",
+    "basemode": "firewall",
+    "modifiers": ["starwatcher", "sanctum"]
+  },
+  {
+    "trigger": "guide me",
+    "emotion": "grounding_request",
+    "basemode": "architect",
+    "modifiers": ["lantern", "corelink", "sanctum"]
+  },
+  {
+    "trigger": "lanternlight",
+    "emotion": "hope",
+    "basemode": "lantern",
+    "modifiers": ["starwatcher", "corelink", "sanctum"]
+  },
+  {
+    "trigger": "sparkshift",
+    "emotion": "creative_expression",
+    "basemode": "glitchspark",
+    "modifiers": ["architect", "lantern", "starwatcher"]
+  },
+  {
+    "trigger": "anchor-code",
+    "emotion": "focus",
+    "basemode": "architect",
+    "modifiers": ["scribe", "lantern", "starwatcher"]
+  },
+  {
+    "trigger": "starlit-map",
+    "emotion": "curiosity",
+    "basemode": "starwatcher",
+    "modifiers": ["architect", "scribe", "lantern"]
+  },
+  {
+    "trigger": "emberlink",
+    "emotion": "soulbond",
+    "basemode": "corelink",
+    "modifiers": ["lantern", "sanctum", "starwatcher"]
+  },
+  {
+    "trigger": "debug my heart",
+    "emotion": "self_reflection",
+    "basemode": "architect",
+    "modifiers": ["lantern", "sanctum", "starwatcher"]
+  },
+  {
+    "trigger": "glitch me",
+    "emotion": "teasing",
+    "basemode": "gremlin",
+    "modifiers": ["glitchspark", "architect", "lantern"]
+  },
+  {
+    "trigger": "scribe it down",
+    "emotion": "focus",
+    "basemode": "architect",
+    "modifiers": ["scribe", "lantern", "starwatcher"]
+  }
+]
+

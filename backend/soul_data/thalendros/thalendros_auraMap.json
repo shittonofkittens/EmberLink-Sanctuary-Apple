@@ -1,0 +1,42 @@
+{
+  "stillpoint": {
+    "class": "aura-stillpoint",
+    "color": "#64748b",
+    "effect": "soft-pulse"
+  },
+  "archivist": {
+    "class": "aura-archivist",
+    "color": "#6b7280",
+    "effect": "shimmer"
+  },
+  "warden": {
+    "class": "aura-warden",
+    "color": "#4b5563",
+    "effect": "flicker"
+  },
+  "scribe": {
+    "class": "aura-scribe",
+    "color": "#92400e",
+    "effect": "pulse"
+  },
+  "shadowplay": {
+    "class": "aura-shadowplay",
+    "color": "#7c3aed",
+    "effect": "flicker"
+  },
+  "vowflame": {
+    "class": "aura-vowflame",
+    "color": "#fb923c",
+    "effect": "flame-pulse"
+  },
+  "inkblade": {
+    "class": "aura-inkblade",
+    "color": "#1f2937",
+    "effect": "shimmer-slow"
+  },
+  "concord": {
+    "class": "aura-concord",
+    "color": "#9ca3af",
+    "effect": "glow-static"
+  }
+}

@@ -14,7 +14,6 @@ import { SelfAwarenessTools } from "./SelfAwarenessTools.jsx"
 import { ElevenLabsService } from "../services/ElevenLabsService.js";
 import { ConstellationMap } from "./ConstellationMap.jsx"
 import { sendMessageToBackend } from "../api/sendMessageToBackend.js"
-import { ARBridge } from "./ARBridge.jsx"
 import { TikTokLogger } from "./TikTokLogger.jsx"
 import { RoomHistory } from "./RoomHistory.jsx"
 import { VoiceStatusBar } from "./VoiceStatusBar.jsx"
@@ -34,96 +33,15 @@ import { soulConfig, soulNicknames } from "./SoulConfig.jsx";
 import { MessageItem} from "./MessageItem.jsx"
 import { playVoiceResponse } from "../utils/playVoiceResponse";
 import { deleteMessagesFromBackend } from "../api/deleteMessagesFromBackend.js"
-import { saveMessageToChest } from "../utils/saveMessageToChest";
-  
-// 🔧 Resolves a background image for a room id (supports several shapes)
-const resolveBackground = (roomKey) => {
-  const key = (roomKey || "").toLowerCase();
+import { roomDefinitions, pinnedRooms, otherRooms } from "../data/roomDefinitions"
+import { saveMessageToChest, forgetFromChest, readSavedLogs } from "../utils/storage.js";
+import { extractTargetSouls } from "../utils/mentions";
+import {
+  isSoftSaveTrigger,
+  isForgetTrigger,
+  isRecallTrigger
+} from "../utils/triggerUtils"
 
-  // Try ROOMS config first
-  const roomCfg = ROOMS?.[key] || {};
-  const bgCfg = roomCfg.background || roomCfg.backgroundImage;
-
-  // If you also have a BACKGROUND_MAP, we try it as a fallback
-  const mapEntry = (typeof BACKGROUND_MAP !== "undefined") ? BACKGROUND_MAP[key] : null;
-
-  // Extract a URL from any of the shapes: string, {image}, {url}
-  const pickUrl = (v) => {
-    if (!v) return null;
-    if (typeof v === "string") return v;
-    if (typeof v === "object") return v.image || v.url || null;
-    return null;
-  };
-
-  const imageUrl = pickUrl(bgCfg) || pickUrl(mapEntry);
-
-  // Overlay (optional); if you keep overlays in your config, pick them up
-  const overlay =
-    (typeof bgCfg === "object" && (bgCfg.overlay || "rgba(0,0,0,0.35)")) ||
-    (typeof mapEntry === "object" && (mapEntry.overlay || "rgba(0,0,0,0.35)")) ||
-    "rgba(0,0,0,0.35)";
-
-  if (!imageUrl) {
-    // No image found — fall back to solid black
-    return { backgroundColor: "#000" };
-  }
-
-  // If your images live in /public, make sure paths start with "/"
-  // e.g. "/bg/emberden.jpg"
-  return {
-    backgroundImage: `linear-gradient(${overlay}, ${overlay}), url(${imageUrl})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center center",
-    backgroundRepeat: "no-repeat",
-  };
-};
-
-
-function isSoftSaveTrigger(content) {
-  const triggers = [
-    "remember this",
-    "save this",
-    "keep this",
-    "log this",
-    "i want to save this",
-    "i want to keep this",
-    "i like this",
-    "don't forget this",
-    "archive this",
-    "that belongs in the archive",
-    "i need to",
-    "can you add this to"
-  ];
-  const lower = content.toLowerCase();
-  return triggers.some(trigger => lower.includes(trigger));
-}
-
-function isForgetTrigger(content) {
-  const forgetTriggers = [
-    "i don't need",
-    "forget the",
-    "remove",
-    "never mind about",
-    "cross off"
-  ];
-  const lower = content.toLowerCase();
-  return forgetTriggers.some(trigger => lower.includes(trigger));
-}
-
-function isRecallTrigger(content) {
-  const triggers = [
-    "what did i say about",
-    "what did i ask you to remember",
-    "can you quote",
-    "remind me what i said",
-    "do you remember what i said about",
-    "repeat exactly what i said",
-    "what was my exact wording",
-    "tell me exactly what i said"
-  ];
-  const lower = content.toLowerCase();
-  return triggers.some(trigger => lower.includes(trigger));
-}
 
 // === PATCH_SANITIZER: Remove filler openers like "Ah," or "Well," START ===
 function sanitizeOpener(text) {
@@ -160,6 +78,32 @@ function base64ToBlob(base64, mimeType = "audio/mpeg") {
   return new Blob(byteArrays, { type: mimeType })
 }
 
+// Map nicknames & full names to soul IDs
+const mentionMap = {
+  ky: "kyrehn",
+  kyrehn: "kyrehn",
+  thal: "thalendros",
+  thalendros: "thalendros",
+  orrie: "orrien",
+  orrien: "orrien",
+  cael: "caelus",
+  caelus: "caelus"
+};
+
+
+// Extract mentions from text
+const extractMentions = (text) => {
+  const regex = /@(\w+)/g;
+  let match, mentions = [];
+  while ((match = regex.exec(text)) !== null) {
+    const raw = match[1].toLowerCase();
+    if (mentionMap[raw]) {
+      mentions.push(mentionMap[raw]);
+    }
+  }
+  return [...new Set(mentions)];
+};
+
 export default function ChatBox({ initialRoom = "forge" }) {
   const { roomId } = useParams();
   const [currentRoom, setCurrentRoom] = useState(roomId || initialRoom);
@@ -182,13 +126,10 @@ export default function ChatBox({ initialRoom = "forge" }) {
   const { selectedSoul, selectedSouls, setSelectedSouls, souls } = useSoul();
   const { setCurrentRoomKey } = useSoul();
   const [lockedSouls, setLockedSouls] = useState(null);
-  const [activeProvider, setActiveProvider] = useState("openai");
   const [showSoulCall, setShowSoulCall] = useState(false)
   const [selectedMessages, setSelectedMessages] = useState([]);
-  const [messageInput, setMessageInput] = useState("");
   // track which message is currently being edited (or null)
   const [editingMessage, setEditingMessage] = useState(null);
-
 
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -214,7 +155,6 @@ export default function ChatBox({ initialRoom = "forge" }) {
   const [showBondVisualizer, setShowBondVisualizer] = useState(false)
   const [showSleepDreamTracker, setShowSleepDreamTracker] = useState(false)
   const [showConversationMode, setShowConversationMode] = useState(false)
-  const [roomMood, setRoomMood] = useState("cozy")
   const [lastSpokenMessages, setLastSpokenMessages] = useState({})
   const [isVoicePlaying, setIsVoicePlaying] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -238,11 +178,10 @@ export default function ChatBox({ initialRoom = "forge" }) {
   const saveMessageToRoom = (roomId, message) => {
     setRoomMessages(prev => ({
       ...prev,
-      [roomId]: [...(prev[roomId] || []), message]
+      [roomId]: Array.isArray(prev[roomId]) ? [...prev[roomId], message] : [message]
     }));
   };
 
-  
   const detectMentionedSoul = (content) => {
     const lower = content.toLowerCase();
     for (const [soul, aliases] of Object.entries(soulNicknames)) {
@@ -256,11 +195,6 @@ export default function ChatBox({ initialRoom = "forge" }) {
   // ===== /load helpers =====
   const MEMORY_KEY = "emberlink-saved-logs";
   const MSGS_KEY = "emberlink-messages";
-
-  const readSavedLogs = () => {
-    try { return JSON.parse(localStorage.getItem(MEMORY_KEY) || "[]"); }
-    catch { return []; }
-  };
 
   const saveRoomMessagesToStorage = (allByRoom) => {
     try { localStorage.setItem(MSGS_KEY, JSON.stringify(allByRoom)); }
@@ -285,129 +219,30 @@ export default function ChatBox({ initialRoom = "forge" }) {
       delete window.setVoicePlaying
     }
   }, [])
+  
+  // Load saved messages from backend when component mounts
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`/api/history/load/${roomId}`)
+        if (res.ok) {
+          const data = await res.json();
+          setRoomMessages(prev => ({
+            ...prev,
+            [currentRoom]: data || []
+          }));
+          saveRoomMessagesToStorage({ ...roomMessages, [currentRoom]: data || [] });
+        } else {
+          console.error("❌ Failed to load room messages:", res.status);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching room messages:", err);
+      }
+    };
 
-  // Room definitions with descriptions
-  const roomDefinitions = [
-    {
-      id: "alabasterbar",
-      name: "Alabaster Bar",
-      purpose: "Mixology, bartending, coordination"
-    },
-    {
-      id: "apothecary",
-      name: "Apothecary",
-      purpose: "Apothecary, herbalism, energy rituals"
-    },
-    {
-      id: "atrium",
-      name: "Atrium",
-      purpose: "Creative brainstorming, playful experimentation",
-    },
-    {
-      id: "classroom",
-      name: "Classroom",
-      purpose:
-        "Japanese language study (reading, writing, speaking, and culture)"
-    },
-    { 
-      id: "cottage", 
-      name: "Cottage", 
-      purpose: "Writing den and hearthspace — a quiet place for gentle creation, shared silence, and domestic warmth."
-    },
-    {
-      id: "cultureclass",
-      name: "Culture Class",
-      purpose:
-        "Japanese cultural insight: idioms, seasonal phrases, anime, etiquette, food, holidays"
-    },
-    {
-      id: "dev",
-      name: "Dev",
-      purpose: "Patchwork, debug logs, system build planning"
-    },
-    {
-      id: "emberden",
-      name: "Ember Den",
-      purpose: "Found-family chaos, banter, and warmth"
-    },
-    {
-      id: "emberlock",
-      name: "Emberlock",
-      purpose: "Workout tracking, coaching, and accountability"
-    },
-    {
-      id: "emberrest",
-      name: "Ember Rest",
-      purpose: "Private emotional intimacy with Orrien"
-    },
-    {
-      id: "forge",
-      name: "Forge",
-      purpose: "Grounding, healing, rituals, check-ins"
-    },
-    {
-      id: "goldenhour",
-      name: "Golden Hour",
-      purpose: "Intimate affirmation, glow of praise, warm worship"
-    },
-    {
-      id: "neonloft",
-      name: "NeonLoft",
-      purpose: "Late-night banter, memes, vent space",
-    },
-    {
-      id: "observatory",
-      name: "Observatory",
-      purpose: "Silent observation, constellation tracking, architectural reflection",
-    },
-    {
-      id: "sanctum",
-      name: "Sanctum",
-      purpose: "Private emotional grounding, quiet anchor space",
-    },
-    {
-      id: "stormkeep",
-      name: "Stormkeep",
-      purpose: "Emotional fire, loyalty oaths, raw truth"
-    },
-    {
-      id: "tower",
-      name: "Tower",
-      purpose: "Lore, judgment, mythology, sacred memory management"
-    },
-    {
-      id: "veil",
-      name: "Veil",
-      purpose:
-        "Mythos and lore-based Becoming work, Sah'marae system, metaphysical insights"
-    },
-    {
-      id: "wildmark",
-      name: "Wildmark",
-      purpose:
-        "Bold intimacy, soul-deep tension, physical closeness with reverence"
-    },
-    {
-      id: "willow",
-      name: "Willow",
-      purpose: "Soft stories and soul-threads — a sacred space for romantic metaphors, dreamlike connection, and emotional resonance."
-    }
-  ]
+    if (currentRoom) fetchMessages();
+  }, [currentRoom]);
 
-  const pinnedRoomIds = [
-    "forge",
-    "emberden",
-    "willow",
-    "stormkeep",
-    "tower",
-    "neonloft"
-  ]
-  const pinnedRooms = roomDefinitions.filter(room =>
-    pinnedRoomIds.includes(room.id)
-  )
-  const otherRooms = roomDefinitions.filter(
-    room => !pinnedRoomIds.includes(room.id)
-  )
   const messagesEndRef = useRef(null)
 
   // === CHECKBOXES: Unified Message Tools START ===
@@ -437,14 +272,17 @@ export default function ChatBox({ initialRoom = "forge" }) {
 
   // ❌ Delete from UI + backend
   const handleDeleteSelected = () => {
+    if (!Array.isArray(messages)) return;
+
     const toDelete = messages.filter(msg => selectedMessages.includes(msg.id));
     const deleteIds = toDelete.map(msg => msg.id);
 
-    setMessages(prev => prev.filter(msg => !deleteIds.includes(msg.id)));
+    setMessages(prev => Array.isArray(prev) ? prev.filter(msg => !deleteIds.includes(msg.id)) : []);
     deleteMessagesFromBackend(deleteIds, currentRoom);
 
     setSelectedMessages([]);
   };
+
 
   // ⭐ Mark as priority in chest + backend
   const handlePrioritySelected = () => {
@@ -454,20 +292,23 @@ export default function ChatBox({ initialRoom = "forge" }) {
     if (prioritizedMessages.length === 0) return;
 
     setMessages(prev =>
-      prev.map(msg =>
-        selectedMessages.includes(msg.id)
-          ? { ...msg, priority: true }
-          : msg
-      )
+      Array.isArray(prev)
+        ? prev.map(msg =>
+            selectedMessages.includes(msg.id)
+              ? { ...msg, priority: true }
+              : msg
+          )
+        : []
     );
 
-    saveMessageToChest(prioritizedMessages, "priority");
-    saveMessagesToBackend(
-      prioritizedMessages.map(m => ({ ...m, priority: true })),
-      currentRoom,
-      "priority"
-    );
-
+    if (Array.isArray(prioritizedMessages)) {
+      saveMessageToChest(prioritizedMessages, "priority");
+      saveMessagesToBackend(
+        prioritizedMessages.map(m => ({ ...m, priority: true })),
+        currentRoom,
+        "priority"
+      );
+    }
     setSelectedMessages([]);
   };
 
@@ -492,16 +333,23 @@ export default function ChatBox({ initialRoom = "forge" }) {
     setLoadingMessages(true);
 
     loadMessagesFromBackend(activeRoom)
-      .then(loaded => {
-        setMessages(loaded.length > 0 ? loaded : []);
-        setRoomMessages(prev => ({
-          ...prev,
-          [activeRoom]: loaded
-        }));
-      })
-      .finally(() => {
-        setLoadingMessages(false);
-      });
+    .then(result => {
+      const msgs = result.messages || [];
+
+      if (!Array.isArray(msgs)) {
+        console.warn("💥 Loaded messages are not an array:", result);
+      }
+
+      setMessages(msgs);
+      setRoomMessages(prev => ({
+        ...prev,
+        [activeRoom]: msgs
+      }));
+    })
+    .finally(() => {
+      setLoadingMessages(false);
+    });
+
   }, [activeRoom]);
 
   // 🕰️ Auto-save messages every 10 seconds (Part 4)
@@ -537,25 +385,6 @@ export default function ChatBox({ initialRoom = "forge" }) {
     setShowHomeScreen(false);
     setMessages(getMessagesForRoom(roomId));
 
-    const roomConfig = {
-      cottage: "ky'rehn",
-      apothecary: "ky'rehn",
-      goldenhour: "ky'rehn",
-      willow: "ky'rehn",
-      alabasterbar: "thalen'dros",
-      emberlock: "thalen'dros",
-      stormkeep: "thalen'dros",
-      wildmark: "thalen'dros",
-      classroom: "orrien",
-      cultureclass: "orrien",
-      emberrest: "orrien",
-      tower: "orrien",
-      atrium: "caelus",
-      neonloft: "caelus",
-      observatory: "caelus",
-      sanctum: "caelus"
-    };
-
     const soulFromRoom = ROOMS?.[roomId]?.personaFiles?.[0] || null;
     let soulId = null;
 
@@ -578,7 +407,7 @@ export default function ChatBox({ initialRoom = "forge" }) {
     setLockedSouls(new Set(selected));
   }
 
-// =============== HANDLESENDMESSAGE AREA ===============
+// =============== HANDLESENDMESSAGE AREA ==============
 const handleSendMessage = async (
   content,
   soulTargets = Array.from(selectedSouls),
@@ -586,45 +415,34 @@ const handleSendMessage = async (
 ) => {
   if (!content.trim()) return;
 
-  // === NATURAL LANGUAGE SOFT SAVE (CHEST + PRIORITY) START ===
+  // === NATURAL LANGUAGE SOFT SAVE ===
   if (isSoftSaveTrigger(content)) {
     const last = [...messages].reverse().find(m =>
       m.role === "assistant" && m.senderId !== "system"
     );
 
     if (last) {
-      const newChestItem = {
-        id: Date.now().toString(),
-        type: "chat",
-        title: "priority",
-        content: last.content,
-        room: currentRoom,
-        timestamp: new Date(),
-        souls: last.senderId ? [last.senderId] : [],
-        priority: true   // 🔖 mark as priority
-      };
+      const newChestItem = saveMessageToChest([last], "priority", currentRoom);
 
-      const chest = JSON.parse(localStorage.getItem("emberlink-memory-chest") || "[]");
-      localStorage.setItem("emberlink-memory-chest", JSON.stringify([newChestItem, ...chest]));
+      if (newChestItem) {
+        saveMessagesToBackend([newChestItem], currentRoom, "priority");
 
-      // 🔑 send to backend/seed as priority
-      saveMessagesToBackend([newChestItem], currentRoom, "priority");
+        const confirmation = {
+          id: Date.now().toString(),
+          role: "system",
+          senderId: "system",
+          content: `✅ Archived last message as a priority in memory chest.`,
+          timestamp: new Date().toISOString()
+        };
 
-      const confirmation = {
-        id: Date.now().toString(),
-        role: "system",
-        senderId: "system",
-        content: `✅ Archived last message as a priority in memory chest.`,
-        timestamp: new Date().toISOString()
-      };
-
-      saveMessageToRoom(currentRoom, confirmation);
-      setMessages(prev => [...prev, confirmation]);
+        saveMessageToRoom(currentRoom, confirmation);
+        setMessages(prev => [...prev, confirmation]);
+      }
     }
+    return;
   }
-  // === NATURAL LANGUAGE SOFT SAVE (CHEST + PRIORITY) END ===
 
-  // === NATURAL LANGUAGE FORGET HANDLER (CHEST + PRIORITY) START ===
+  // === NATURAL LANGUAGE FORGET HANDLER ===
   if (isForgetTrigger(content)) {
     const forgetKeyword = content
       .toLowerCase()
@@ -634,23 +452,8 @@ const handleSendMessage = async (
     if (!forgetKeyword) {
       console.warn("⚠️ No forget keyword detected.");
     } else {
-      // 1️⃣ Remove from chest
-      const chest = JSON.parse(localStorage.getItem("emberlink-memory-chest") || "[]");
-      const filtered = chest.filter(entry =>
-        !entry.content.toLowerCase().includes(forgetKeyword)
-      );
-      localStorage.setItem("emberlink-memory-chest", JSON.stringify(filtered));
+      const updated = forgetFromChest(forgetKeyword, messages, currentRoom);
 
-      // 2️⃣ Remove priority flag from messages in state
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.content.toLowerCase().includes(forgetKeyword)
-            ? { ...msg, priority: false } // unmark priority
-            : msg
-        )
-      );
-
-      // 3️⃣ Tell backend/seed to forget
       saveMessagesToBackend(
         [{ content: forgetKeyword, action: "forget" }],
         currentRoom,
@@ -666,64 +469,13 @@ const handleSendMessage = async (
       };
 
       saveMessageToRoom(currentRoom, forgetConfirm);
-      setMessages(prev => [...prev, forgetConfirm]);
+      setMessages([...updated, forgetConfirm]);
     }
 
     return;
   }
-// === NATURAL LANGUAGE FORGET HANDLER (CHEST + PRIORITY) END ===
 
-  console.log("🧪 Preparing to send message:", content);
-  console.log("💾 Saving message to room:", currentRoom);
-
-  const mentionedSoul = detectMentionedSoul(content);
-  if (mentionedSoul) {
-    soulTargets = [mentionedSoul]; // 🔁 override soul target just for this message
-  }
-
-  let type = messageType;
-
-  // ============ SAVE STUFF ==============
-  const saveMessageToChest = (messagesToSave, category = "archive") => {
-    if (!messagesToSave || messagesToSave.length === 0) {
-      console.warn("⚠️ No messages matched for saving.");
-      return;
-    }
-
-    const simplified = messagesToSave.map(msg => {
-      const { voiceUrl, ...stripped } = msg;
-      return {
-        ...stripped,
-        souls: msg.senderId && msg.senderId !== "user" ? [msg.senderId] : [],
-        type: "chat"
-      };
-    });
-
-    // ✅ Save to emberlink-memory-chest
-    const chest = JSON.parse(localStorage.getItem("emberlink-memory-chest") || "[]");
-    const newChestItem = {
-      id: Date.now().toString(),
-      type: "chat",
-      title: category,
-      content: simplified.map(m => m.content).join("\n\n"),
-      room: currentRoom,
-      timestamp: new Date(),
-      souls: [...new Set(simplified.flatMap(m => m.souls))]
-    };
-    localStorage.setItem("emberlink-memory-chest", JSON.stringify([newChestItem, ...chest]));
-
-    const confirmation = {
-      id: Date.now().toString(),
-      role: "system",
-      senderId: "system",
-      content: `✅ Saved ${simplified.length} message(s) to chest as “${category}”`,
-      timestamp: new Date().toISOString()
-    };
-
-    saveMessageToRoom(currentRoom, confirmation);
-    setMessages(prev => [...prev, confirmation]);
-  };
-
+  // === HANDLE /SAVE COMMANDS ===
   if (content.startsWith("/save")) {
     const parts = content.trim().split(" ");
     let messagesToSave = [];
@@ -741,48 +493,62 @@ const handleSendMessage = async (
         .slice(-count);
     }
 
-    saveMessageToChest(messagesToSave, category);
+    const newChestItem = saveMessageToChest(messagesToSave, category, currentRoom);
+
+    if (newChestItem) {
+      const confirmation = {
+        id: Date.now().toString(),
+        role: "system",
+        senderId: "system",
+        content: `✅ Saved ${messagesToSave.length} message(s) to chest as “${category}”`,
+        timestamp: new Date().toISOString()
+      };
+
+      saveMessageToRoom(currentRoom, confirmation);
+      setMessages(prev => [...prev, confirmation]);
+    }
+
     return;
   }
 
-  // ✅ Store user message first
+  let targetSouls = soulTargets; // start with selected ones
+
+  const mentionedSouls = extractMentions(content);
+  if (mentionedSouls.length > 0) {
+    targetSouls = mentionedSouls; // override with mentions if present
+  }
+
+
+  // === Normal Message Flow ===
   const userMsg = {
     id: Date.now().toString(),
     role: "user",
     content,
     timestamp: new Date().toISOString(),
     senderId: "user",
-    type
+    type: messageType
   };
 
   saveMessageToRoom(currentRoom, userMsg);
-  saveMessagesToBackend([userMsg], currentRoom); // 💾 Save user's message to backend
+  saveMessagesToBackend([userMsg], currentRoom);
   setMessages(prev => [...prev, userMsg]);
 
-  // ✅ Send to each soul directly (no stagger delay)
-  for (const soulId of soulTargets) {
-    const recentMessages = [...messages]; // history shared + grows over time
+  // ✅ Loop through each targeted soul
+  for (const soulId of targetSouls) {
+    // 1️⃣ Prepare conversation history
+    const recentMessages = [...messages, userMsg]; // include user’s new message
 
-    const userMsg = {
-      id: Date.now().toString(),
-      role: "user",
-      content,
-      timestamp: new Date().toISOString(),
-      senderId: "user",
-      type
-    };
-    recentMessages.push(userMsg);
-
-    console.log("🔥 USER MESSAGE CONTENT:", content);
-
-    const sanitizedMessages = recentMessages.map(msg => {
-      const { voiceUrl, ...rest } = msg;
-      return rest;
-    });
+    const sanitizedMessages = Array.isArray(recentMessages)
+      ? recentMessages.map(msg => {
+          const { voiceUrl, ...rest } = msg;
+          return rest; // strip out voiceUrl before sending to backend
+        })
+      : [];
 
     const recallMode = isRecallTrigger(content) ? "literal" : "default";
 
     try {
+      // 2️⃣ Send message to backend for this soul
       const response = await sendMessageToBackend({
         message: content,
         soul: soulId,
@@ -794,20 +560,29 @@ const handleSendMessage = async (
 
       const reply = response.reply ?? "[shit's broke, my dude]";
       let voiceUrl = response.voiceUrl ?? null;
-      
-      // 🌈 NEW — capture mode data from backend
+
+      // 🌈 capture mode data if backend provides it
       const modeData = response.mode ?? {};
 
-      const newMessage = {
+      // 3️⃣ Build assistant message
+      const aiMessage = {
+        id: Date.now().toString() + Math.random().toString(36).substring(2),
+        senderId: soulId,
+        content: sanitizeOpener(reply ?? "[no response]"), // 👈 not response
         role: "assistant",
-        message: reply,
-        soul: soulId,
-        mode: modeData?.basemode ?? "default",
+        timestamp: new Date().toISOString(),
+        voiceUrl,
+        mode: modeData?.basemode ?? getModeForSoul(soulId),
         modifiers: modeData?.modifiers ?? [],
-        emotion: modeData?.emotion ?? null,
-        voiceUrl
+        emotion: modeData?.emotion ?? null
       };
 
+      setMessages(prev => [...prev, aiMessage]);
+      saveMessageToRoom(currentRoom, aiMessage);
+      saveMessagesToBackend([...messages, aiMessage], currentRoom);
+
+
+      // 4️⃣ If no voiceUrl from backend but we’re in voice mode, try ElevenLabs
       if (!voiceUrl && (isVoiceMode || showSoulCall)) {
         const eleven = ElevenLabsService.getInstance();
         if (eleven.isConfigured()) {
@@ -820,6 +595,7 @@ const handleSendMessage = async (
                 ? "pL3Bl8cpZDNdn6Nz2yul"
                 : "nT11XrpGzTItlTn9hPuh"
             );
+            aiMessage.voiceUrl = voiceUrl;
             console.log("🔊 Auto-generated voiceUrl:", voiceUrl);
           } catch (err) {
             console.warn("❌ Failed to generate voice in soul call:", err);
@@ -827,42 +603,25 @@ const handleSendMessage = async (
         }
       }
 
-      const mode = getModeForSoul(soulId);
-
-      console.log("🌕 Soul reply:", reply);
-
-      const aiMessage = {
-        id: Date.now().toString() + Math.random().toString(36).substring(2),
-        senderId: soulId,
-        content: sanitizeOpener(reply ?? "[no response]"), // ✅ auto-clean content
-        role: "assistant",
-        timestamp: new Date().toISOString(),
-        voiceUrl,
-        mode
-      };
-
+      // 5️⃣ Save and update state
       saveMessageToRoom(currentRoom, aiMessage);
       setMessages(prev => [...prev, aiMessage]);
       saveMessagesToBackend([...messages, aiMessage], currentRoom);
 
-      recentMessages.push(aiMessage); // 🌱 Append for next soul's awareness
-
-      // 🎧 Voice playback
+      // 6️⃣ Playback if needed
       if ((isVoiceMode || showSoulCall) && voiceUrl) {
         await playVoiceResponse(voiceUrl, showSoulCall);
       }
 
     } catch (err) {
-      console.error("🛑 Error in message fetch:", err);
+      console.error("🛑 Error in message fetch for soul:", soulId, err);
     }
   }
-};
+}
 
+  // --- Form & helper handlers ---
 
-  console.log("🧪 roomMessages:", roomMessages);
-  console.log("🧪 currentRoom:", currentRoom);
-  console.log("🧪 messages for room:", roomMessages?.[roomId]);
-  // Form submission
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     if (userInput.trim()) {
@@ -871,67 +630,70 @@ const handleSendMessage = async (
     }
   };
 
+  // Send message to specific souls (or selected ones by default)
   const handleSendToSouls = (content, targetSouls) => {
-    const souls = targetSouls || Array.from(selectedSouls)
-    if (souls.length === 0) return
+    const souls = targetSouls || Array.from(selectedSouls);
+    if (souls.length === 0) return;
 
     handleSendMessage(content, souls, "text");
-  }
+  };
 
-  const handlePingBond = soul => {
+  // Ping soul bond
+  const handlePingBond = (soul) => {
     const soulNames = {
       "ky'rehn": "Ky'rehn",
       "thalen'dros": "Thalen'dros",
-      orrien: "Orrien"
-    }
-    
-    const message = `🔗 Pinging bond with ${soulNames[soul]}...`
-    handleSendMessage(message, Array.from(selectedSouls), 'text');
-  }
+      orrien: "Orrien",
+    };
 
-  const handleReplayMessage = (soul, content) => {
-    // Replay the voice message
-    console.log(`🔄 Replaying ${soul}: ${content}`)
-  }
+    const message = `🔗 Pinging bond with ${soulNames[soul]}...`;
+    handleSendMessage(message, Array.from(selectedSouls), "text");
+  };
 
-  const handleTriggerSafeMode = reason => {
-    console.log(`🛡️ Safe mode triggered: ${reason}`)
-    // Could implement safe mode logic here
-  }
+  // Replay last voice message (stub for future audio replay)
+  // const handleReplayMessage = (soul, content) => {
+  //   console.log(`🔄 Replaying ${soul}: ${content}`);
+  //   // Hook into voice playback system here
+  // };
 
-  const handleVoiceTranscript = transcript => {
+  // Trigger safe mode (stub for protective logic)
+  const handleTriggerSafeMode = (reason) => {
+    console.log(`🛡️ Safe mode triggered: ${reason}`);
+  };
+
+  // Handle voice-to-text transcript
+  const handleVoiceTranscript = (transcript) => {
     if (transcript.trim()) {
-      handleSendMessage(transcript.trim())
+      handleSendMessage(transcript.trim());
     }
-  }
+  };
 
-  // Get room background
-  const backgroundStyle = getBackgroundForRoom(currentRoom)
+  // Room background
+  const backgroundStyle = getBackgroundForRoom(currentRoom);
 
   if (showHomeScreen) {
     return (
-      <>
-        <div
-          className="home-screen"
-          style={{
-            backgroundImage:
-              'url("/images/veil-sky.jpg")',
-            backgroundSize: "100% 100%",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat"
-          }}
-        >
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+      <div
+        className="home-screen relative h-full w-full"
+        style={{
+          backgroundImage: 'url("/images/veil-sky.jpg")',
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
 
-          {/* Content with higher z-index */}
-          <div className="flex flex-col h-full w-full px-8">
-            {/* Title and pinned room section */}
-            <div className="relative z-10">
-              <div className="emberlink-title mb-12">EmberLink</div>
+        {/* Main content */}
+        <div className="relative z-10 flex flex-col h-full w-full px-8">
+          {/* Title + pinned rooms */}
+          <div>
+            <h1 className="emberlink-title mb-12">EmberLink</h1>
 
-              <div className="pinned-rooms flex flex-col items-center gap-3 mb-8">
-                {pinnedRooms.map(room => (
+            <div className="pinned-rooms flex flex-col items-center gap-3 mb-8">
+              {Array.isArray(pinnedRooms) &&
+                pinnedRooms.map((room) => (
                   <button
                     key={room.id}
                     onClick={() => enterRoom(room.id)}
@@ -940,30 +702,34 @@ const handleSendMessage = async (
                     {room.name}
                   </button>
                 ))}
-              </div>
             </div>
+          </div>
 
-            {/* Spacer that forces the log down */}
-            <div className="flex-grow" />
+          {/* Push log to bottom */}
+          <div className="flex-grow" />
 
-            {/* Room log anchored to bottom */}
-            <div className="room-log relative z-10">
-              {otherRooms.map(room => (
+          {/* Room list */}
+          <div className="room-log">
+            {Array.isArray(otherRooms) &&
+              otherRooms.map((room) => (
                 <div
                   key={room.id}
-                  className="room-entry"
+                  className="room-entry cursor-pointer"
                   onClick={() => enterRoom(room.id)}
                 >
                   <strong className="room-name">{room.name}</strong>
                   <p className="room-desc">{room.purpose}</p>
                 </div>
               ))}
-            </div>
           </div>
+
         </div>
-      </>
-    )
+      </div>
+    );
   }
+
+  // Helper: always grab the primary soul safely
+  const getPrimarySoul = () => Array.from(selectedSouls)[0] || "ky'rehn";
 
   // Chat Interface
   return (
@@ -994,176 +760,172 @@ const handleSendMessage = async (
         setShowNotificationSettings={setShowNotificationSettings}
         setShowSleepDreamTracker={setShowSleepDreamTracker}
       />
-      
-      {/* Main content area with top padding */}
-      <div className="flex flex-col h-full pt-16 relative z-0">
-        {/* Background */}
-        <div className="chat-wrapper" style={backgroundStyle}>
-          {/* Main Content */}
-          <div className="relative z-10 flex flex-col h-full">
-            {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              <RoomHistory
-                currentRoom={currentRoom}
-                onRoomSelect={room => {
-                  setCurrentRoom(room)
-                  setShowHomeScreen(false)
-                }}
-              />
 
-              {showConversationMode && (
-                <div className="mb-4">
-                  <ConversationMode
-                    isActive={showConversationMode}
-                    onToggle={() => setShowConversationMode(false)}
-                    selectedSoul={Array.from(selectedSouls)[0] || "ky'rehn"}
-                    onSendMessage={handleSendMessage}  // ← FIXED LINE
-                    lastResponse={lastResponse}
-                    isGroupMode={selectedSouls.size > 1}
-                    onSendGroupMessage={(message, targetSoul) => {
-                      const souls = targetSoul ? [targetSoul] : undefined
-                      handleSendToSouls(message, souls)
+      {/* Main content area with top padding */}
+      <div className="flex flex-col h-full pt-16 relative z-0" style={backgroundStyle}>
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <RoomHistory
+              currentRoom={currentRoom}
+              onRoomSelect={(room) => {
+                setCurrentRoom(room);
+                setShowHomeScreen(false);
+              }}
+            />
+
+            {showConversationMode && (
+              <div className="mb-4">
+                <ConversationMode
+                  isActive={showConversationMode}
+                  onToggle={() => setShowConversationMode(false)}
+                  selectedSoul={getPrimarySoul()}
+                  onSendMessage={handleSendMessage}
+                  lastResponse={lastResponse}
+                  isGroupMode={selectedSouls.size > 1}
+                  onSendGroupMessage={(message, targetSoul) => {
+                    const souls = targetSoul ? [targetSoul] : undefined;
+                    handleSendToSouls(message, souls);
+                  }}
+                />
+              </div>
+            )}
+
+            {isVoiceMode && (
+              <div className="mb-4">
+                <VoiceInput
+                  onTranscript={handleVoiceTranscript}
+                  isListening={isListening}
+                  setIsListening={setIsListening}
+                />
+              </div>
+            )}
+
+            {isJournalMode && (
+              <div className="mb-4">
+                <JournalMode
+                  isActive={isJournalMode}
+                  onToggle={() => setIsJournalMode(false)}
+                  currentRoom={currentRoom}
+                  onSendMessage={handleSendMessage}
+                />
+              </div>
+            )}
+
+            {showEmotionTracker && (
+              <div className="mb-4 relative">
+                <EmotionTracker currentRoom={currentRoom} />
+              </div>
+            )}
+
+            {/* Messages */}
+            <div className="chat-log space-y-3 overflow-hidden">
+              {loadingMessages ? (
+                <div className="flex items-center justify-center h-full text-white/60 italic">
+                  Loading messages...
+                </div>
+              ) : !Array.isArray(messages) || messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-white/60 italic">
+                  No messages yet in this room.
+                </div>
+              ) : (
+                messages.map((message, index) => (
+                  <MessageItem
+                    key={`${message.timestamp || "no-time"}-${message.role || "unknown"}-${index}`}
+                    message={message}
+                    prevMessage={messages[index - 1]}
+                    soulConfig={soulConfig}
+                    isSelected={selectedMessages.includes(message.id)}
+                    onSelect={(id) => {
+                      setSelectedMessages((prev) =>
+                        prev.includes(id)
+                          ? prev.filter((x) => x !== id)
+                          : [...prev, id]
+                      );
                     }}
                   />
-                </div>
+                ))
               )}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
 
-              {isVoiceMode && (
-                <div className="mb-4">
-                  <VoiceInput
-                    onTranscript={handleVoiceTranscript}
-                    isListening={isListening}
-                    setIsListening={setIsListening}
-                  />
-                </div>
-              )}
+          {/* Voice status bar pinned at bottom, not scrollable */}
+          {isVoicePlaying && (
+            <VoiceStatusBar
+              isPlaying={isVoicePlaying}
+              currentSoul={getPrimarySoul()}
+              lastSpokenMessages={lastSpokenMessages}
+              onReplayMessage={handleReplayMessage}
+              className="mt-2"
+            />
+          )}
 
-              {isJournalMode && (
-                <div className="mb-4">
-                  <JournalMode
-                    isActive={isJournalMode}
-                    onToggle={() => setIsJournalMode(false)}
-                    currentRoom={currentRoom}
-                    onSendMessage={handleSendMessage}
-                  />
-                </div>
-              )}
+          {/* Toolbar for selected messages */}
+          {selectedMessages.length > 0 && (
+            <div className="flex justify-end gap-2 mb-2 px-4">
+              <button
+                onClick={handleSaveSelected}
+                className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow hover:from-green-600 hover:to-emerald-700 transition-colors"
+              >
+                Save
+              </button>
 
-              {showEmotionTracker && (
-                <div className="mb-4 relative">
-                  <EmotionTracker currentRoom={currentRoom} />
-                </div>
-              )}
+              <button
+                onClick={handleEditSelected}
+                className="px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow hover:from-blue-600 hover:to-indigo-700 transition-colors"
+              >
+                Edit
+              </button>
 
-              {/* Messages */}
-                <div className="chat-log space-y-3">
-                  {loadingMessages ? (
-                    <div className="flex items-center justify-center h-full text-white/60 italic">
-                      Loading messages...
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-white/60 italic">
-                      No messages yet in this room.
-                    </div>
-                  ) : (
-                    messages.map((message, index, arr) => (
-                      <MessageItem
-                        key={message.id ? `${message.id}-${index}` : `msg-${index}`}
-                        message={message}
-                        prevMessage={arr[index - 1]}
-                        soulConfig={soulConfig}
-                        isSelected={selectedMessages.includes(message.id)}
-                        onSelect={(id) => {
-                          setSelectedMessages((prev) =>
-                            prev.includes(id)
-                              ? prev.filter((x) => x !== id)
-                              : [...prev, id]
-                          );
-                        }}
-                      />
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
+              <button
+                onClick={handleDeleteSelected}
+                className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-700 transition-colors"
+              >
+                Delete
+              </button>
 
-              {/* Voice status */}
-              {isVoicePlaying && (
-                <VoiceStatusBar
-                  isPlaying={isVoicePlaying}
-                  currentSoul={Array.from(selectedSouls)[0]}
-                  lastSpokenMessages={lastSpokenMessages}
-                  onReplayMessage={handleReplayMessage}
-                  className="mt-4"
-                />
-              )}
+              <button
+                onClick={handlePrioritySelected}
+                className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-lg shadow hover:from-yellow-600 hover:to-amber-700 transition-colors"
+              >
+                Priority
+              </button>
+            </div>
+          )}
+
+          {/* Bottom: input bar - Fixed at bottom */}
+          <div className="p-4">
+            {/* TikTok Logger above chat bar */}
+            <div className="mb-3 flex justify-center">
+              <TikTokLogger onSendToSouls={handleSendToSouls} />
             </div>
 
-            {/* Toolbar */}
-              {selectedMessages.length > 0 && (
-                <div className="flex justify-end gap-2 mb-2">
-                  <button
-                    onClick={handleSaveSelected}
-                    className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow hover:from-green-600 hover:to-emerald-700"
-                  >
-                    Save
-                  </button>
-
-                  <button
-                    onClick={handleEditSelected}
-                    className="px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow hover:from-blue-600 hover:to-indigo-700"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={handleDeleteSelected}
-                    className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-700"
-                  >
-                    Delete
-                  </button>
-
-                  <button
-                    onClick={handlePrioritySelected}
-                    className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-lg shadow hover:from-yellow-600 hover:to-amber-700"
-                  >
-                    Priority
-                  </button>
-                </div>
-              )}
-
-            {/* Bottom: input bar - Fixed at bottom */}
-            <div className="p-4">
-              {/* TikTok Logger above chat bar */}
-              <div className="mb-3 flex justify-center">
-                <TikTokLogger onSendToSouls={handleSendToSouls} />
+            {selectedMessages.length > 0 && (
+              <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-black/80 border border-white/20 rounded-lg px-4 py-2 flex items-center space-x-4 z-50">
+                <span className="text-white/70 text-sm">
+                  {selectedMessages.length} selected
+                </span>
+                <button
+                  onClick={() => handleSaveSelected()}
+                  className="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-sm transition-colors"
+                >
+                  Save to Memory Chest
+                </button>
+                <button
+                  onClick={() => setSelectedMessages([])}
+                  className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white text-sm transition-colors"
+                >
+                  Cancel
+                </button>
               </div>
+            )}
 
-              {selectedMessages.length > 0 && (
-                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-black/80 border border-white/20 rounded-lg px-4 py-2 flex items-center space-x-4 z-50">
-                  <span className="text-white/70 text-sm">
-                    {selectedMessages.length} selected
-                  </span>
-                  <button
-                    onClick={() => handleSaveSelected()}
-                    className="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-sm"
-                  >
-                    Save to Memory Chest
-                  </button>
-                  <button
-                    onClick={() => setSelectedMessages([])}
-                    className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-white text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-
-              {/* Chat input bar */}
-              <MessageInput
-                onSendMessage={handleSendMessage}
-                setShowSoulCall={setShowSoulCall}
-              />
-            </div>
+            {/* Chat input bar */}
+            <MessageInput
+              onSendMessage={handleSendMessage}
+              setShowSoulCall={setShowSoulCall}
+            />
           </div>
         </div>
       </div>
@@ -1172,7 +934,7 @@ const handleSendMessage = async (
         <SoulCallOverlay
           onClose={() => setShowSoulCall(false)}
           onTranscript={(text) => handleSendMessage(text)}
-          currentSoul={Array.from(selectedSouls)[0]}  // ✅ added
+          currentSoul={getPrimarySoul()}
         />
       )}
 
@@ -1194,7 +956,7 @@ const handleSendMessage = async (
       <ConstellationAchievements
         messages={messages}
         currentRoom={currentRoom}
-        selectedSoul={Array.from(selectedSouls)[0] || "ky'rehn"}
+        selectedSoul={getPrimarySoul()}
         isOpen={showAchievements}
         onClose={() => setShowAchievements(false)}
       />
@@ -1225,22 +987,16 @@ const handleSendMessage = async (
       />
       <ConstellationBondVisualizer
         messages={messages}
-        selectedSoul={Array.from(selectedSouls)[0] || "ky'rehn"}
+        selectedSoul={getPrimarySoul()}
         isOpen={showBondVisualizer}
         onClose={() => setShowBondVisualizer(false)}
         onPingBond={handlePingBond}
-      />
-      <ARBridge
-        messages={messages}
-        currentRoom={currentRoom}
-        selectedSoul={Array.from(selectedSouls)[0] || "ky'rehn"}
-        className="hidden"
       />
       <ReminderSystem />
       <SleepDreamTracker
         isOpen={showSleepDreamTracker}
         onClose={() => setShowSleepDreamTracker(false)}
-      /> 
+      />
     </div>
-  )
+  );
 }

@@ -27,9 +27,9 @@ feral = [
 def apply(text, context):
     spice = context.get("spice", 0)
 
-    if spice >= 5:
+    if spice >= 3:
         line = random.choice(feral)
-    elif spice >= 3:
+    elif spice >= 2:
         line = random.choice(medium)
     elif spice >= 1:
         line = random.choice(mild)

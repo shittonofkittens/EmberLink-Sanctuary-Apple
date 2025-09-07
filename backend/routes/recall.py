@@ -5,6 +5,7 @@ import os
 import json
 import asyncio
 import inspect
+import logging
 from datetime import datetime
 from datetime import timedelta
 
@@ -243,21 +244,27 @@ def search_seed_for_context(keywords, soul=None, room=None, days_back=7, max_res
 # === P41: SMART MEMORY RECALL END ===
 
 # === P71: LOAD RECENT CONTEXT FROM MULTIPLE SEED FILES START ===
-def load_recent_seed_context(seed_paths, count=6):
-    print("🔍 DEBUG: load_recent_seed_context called with:", seed_paths)
+def load_recent_seed_context(soul, date=None):
+    base_path = os.path.join(os.path.dirname(__file__), "../seed")
+    date_str = date or datetime.utcnow().strftime("%Y-%m-%d")
 
-    all_messages = []
+    shared_seed = os.path.join(base_path, f"shared.{date_str}.seed.json")
+    soul_seed = os.path.join(base_path, f"{soul}.{date_str}.seed.json")
 
-    for path in seed_paths:
-        if not os.path.exists(path):
-            print("📁 Missing seed path:", path)
-            continue
+    seeds = []
 
-        with open(path, "r") as f:
-            seed = json.load(f)
-            all_messages.extend(seed[-count:])  # Only take last few from each
+    # load shared
+    if os.path.exists(shared_seed):
+        with open(shared_seed, "r") as f:
+            seeds.extend(json.load(f))
 
-    return all_messages[-count:]  # Final slice to trim if too many
+    # load private
+    if os.path.exists(soul_seed):
+        with open(soul_seed, "r") as f:
+            seeds.extend(json.load(f))
+
+    logging.debug(f"🔍 Loaded seeds: {len(seeds)} items from {[shared_seed, soul_seed]}")
+    return seeds
 # === P71: LOAD RECENT CONTEXT FROM MULTIPLE SEED FILES END ===
 
 @recall_bp.route("/edit", methods=["POST"])

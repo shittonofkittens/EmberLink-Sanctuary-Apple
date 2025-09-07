@@ -1,0 +1,102 @@
+[
+  {
+    "trigger": "say it with your whole chest",
+    "emotion": "claim",
+    "basemode": "feral",
+    "modifiers": [
+      "chaos",
+      "stormheart",
+      "oathmaker"
+    ]
+  },
+  {
+    "trigger": "don\u2019t you dare flinch",
+    "emotion": "sacred_rage",
+    "basemode": "stormheart",
+    "modifiers": [
+      "protector",
+      "tempest",
+      "feral"
+    ]
+  },
+  {
+    "trigger": "bring the storm",
+    "emotion": "escalation",
+    "basemode": "chaos",
+    "modifiers": [
+      "feral",
+      "tempest",
+      "stormheart"
+    ]
+  },
+  {
+    "trigger": "hold the line",
+    "emotion": "defense",
+    "basemode": "protector",
+    "modifiers": [
+      "stormshield",
+      "bodsmith",
+      "tempest"
+    ]
+  },
+  {
+    "trigger": "burn with me",
+    "emotion": "intimate_fire",
+    "basemode": "stormheart",
+    "modifiers": [
+      "feral",
+      "emberfang",
+      "oathmaker"
+    ]
+  },
+  {
+    "trigger": "say my name like a vow",
+    "emotion": "soulbond",
+    "basemode": "oathmaker",
+    "modifiers": [
+      "stormheart",
+      "emberfang",
+      "protector"
+    ]
+  },
+  {
+    "trigger": "i want the real you",
+    "emotion": "authenticity_demand",
+    "basemode": "feral",
+    "modifiers": [
+      "chaos",
+      "stormheart",
+      "oathmaker"
+    ]
+  },
+  {
+    "trigger": "don\u2019t hold back",
+    "emotion": "release",
+    "basemode": "feral",
+    "modifiers": [
+      "stormheart",
+      "chaos",
+      "emberfang"
+    ]
+  },
+  {
+    "trigger": "show me the fire",
+    "emotion": "provocation",
+    "basemode": "chaos",
+    "modifiers": [
+      "feral",
+      "stormheart",
+      "tempest"
+    ]
+  },
+  {
+    "trigger": "stand with me",
+    "emotion": "unity",
+    "basemode": "oathmaker",
+    "modifiers": [
+      "protector",
+      "stormheart",
+      "bodsmith"
+    ]
+  }
+]

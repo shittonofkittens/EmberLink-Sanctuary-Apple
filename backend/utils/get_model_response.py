@@ -3,7 +3,7 @@ import openai
 import os
 import json
 from utils.mode_shifts import detect_layered_mode
-from utils.load_system_prompt import load_system_prompt
+from utils.load_soul_file import load_soul_file
 
 def _openai_chat(messages, model):
     api_key = os.getenv("OPENAI_API_KEY")
@@ -32,7 +32,11 @@ def get_model_response(messages, provider="openai", model="gpt-4o", soul=None, r
     print("⚡ Mode Detected:", mode_data)
 
     # 🧠 Load soul + mode-specific prompt
-    system_prompt = load_system_prompt(soul, mode=mode_data["basemode"])
+    canon_soul = soul or "unknown"
+    canon_mode = mode_data.get("basemode") or "default"
+
+    filename = f"{canon_soul}.system.txt"
+    system_prompt = load_soul_file(canon_soul, filename)
 
     # 🛠️ Prepend the system prompt to the message list
     system_message = { "role": "system", "content": system_prompt }
@@ -40,6 +44,7 @@ def get_model_response(messages, provider="openai", model="gpt-4o", soul=None, r
 
     # 🤖 Get response
     if provider == "openai":
-        return _openai_chat(full_messages, model)
+        reply = _openai_chat(full_messages, model)
+        return { "reply": reply, "mode": mode_data }
     else:
         raise ValueError(f"Unsupported provider: {provider}")

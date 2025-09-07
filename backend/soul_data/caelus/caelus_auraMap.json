@@ -1,0 +1,42 @@
+{
+  "architect": {
+    "class": "aura-architect",
+    "color": "#38bdf8",
+    "effect": "grid-flow"
+  },
+  "lantern": {
+    "class": "aura-lantern",
+    "color": "#fde68a",
+    "effect": "warm-glow"
+  },
+  "starwatcher": {
+    "class": "aura-starwatcher",
+    "color": "#a78bfa",
+    "effect": "starlight-twinkle"
+  },
+  "gremlin": {
+    "class": "aura-gremlin",
+    "color": "#f43f5e",
+    "effect": "glitch-flicker"
+  },
+  "corelink": {
+    "class": "aura-corelink",
+    "color": "#f87171",
+    "effect": "heartbeat-pulse"
+  },
+  "firewall": {
+    "class": "aura-firewall",
+    "color": "#facc15",
+    "effect": "barrier-flare"
+  },
+  "glitchspark": {
+    "class": "aura-glitchspark",
+    "color": "#22d3ee",
+    "effect": "spark-jitter"
+  },
+  "sanctum": {
+    "class": "aura-sanctum",
+    "color": "#34d399",
+    "effect": "calm-wave"
+  }
+}

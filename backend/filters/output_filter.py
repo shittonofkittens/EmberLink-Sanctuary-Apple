@@ -12,7 +12,7 @@ def apply_soft_tone(
     line_breaks=False,
     signature=None,
     suppress=True,
-    mode_data=None  # 🧠 New param
+    mode_data=None
 ):
     transformed = text
 
@@ -50,14 +50,23 @@ def apply_soft_tone(
     if signature and not suppress and signature not in transformed:
         transformed += f"\n\n{signature}"
 
-        # 🔄 Mode-based dynamic tuning
+    # --- Mode-based dynamic tuning ---
+    emotion = None
+    basemode = None
+    modifiers = []
+
     if mode_data:
-        emotion = mode_data.get("emotion")
-        basemode = mode_data.get("basemode")
+        emotion = mode_data.get("emotion") or "neutral"
+        basemode = mode_data.get("basemode") or "default"
         modifiers = mode_data.get("modifiers", [])
 
-        # 💛 If it's a grounding or soft emotion, soften tone
-        if emotion in ["grounding_request", "soft", "reverentlove", "hope", "lonely"]:
+        # 🔍 Specific emotion handling
+        if emotion == "tense":
+            pacing = "slow"
+            clarity = True
+            ambient = True
+
+        elif emotion in ["grounding_request", "soft", "reverentlove", "hope", "lonely"]:
             pacing = "slow"
             warmth = True
             clarity = True
@@ -65,7 +74,6 @@ def apply_soft_tone(
             ambient = "sanctum" in modifiers or "lantern" in modifiers
             line_breaks = True
 
-        # 🔥 If it's feral, teasing, or chaos-related, strip softness
         elif basemode in ["feral", "chaos"]:
             warmth = False
             clarity = False
@@ -73,9 +81,8 @@ def apply_soft_tone(
             ambient = False
             pacing = "fast"
             line_breaks = False
-            suppress = True  # no signature or prepend
+            suppress = True
 
-        # ⚙️ Tempest or protector? Clean, clear, no fluff.
         elif basemode in ["tempest", "protector", "stormshield"]:
             warmth = False
             clarity = True
@@ -83,8 +90,9 @@ def apply_soft_tone(
             line_breaks = False
             pacing = "natural"
 
-    # 🧪 Debug logging
+    # 🧪 Debug logging (safe even if mode_data=None)
+    logging.debug(f"[SoftTone:Mode] emotion={emotion}, basemode={basemode}, modifiers={modifiers}")
     logging.debug(f"[SoftTone] pacing={pacing}, warmth={warmth}, clarity={clarity}, "
                   f"resonance={resonance}, ambient={ambient}, suppress={suppress}")
-    logging.debug(f"[SoftTone:Mode] emotion={emotion}, basemode={basemode}, modifiers={modifiers}")
+
     return transformed

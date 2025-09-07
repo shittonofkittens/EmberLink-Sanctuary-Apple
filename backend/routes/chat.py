@@ -13,10 +13,11 @@ from utils.load_system_prompt import load_system_prompt
 from routes.recall import load_recent_seed_context
 from filters.index import apply_input_filter, apply_output_filter as apply_mode_output
 from spice.index import apply_spice_input, apply_spice_output
-from utils.mode_shift import detect_layered_mode
+from utils.mode_shifts import detect_layered_mode
 from utils.get_model_response import get_model_response
 from filters.index import norm_soul
 from utils.mode_shifts import detect_layered_mode  # (at top of file, if not already)
+from utils.load_soul_file import load_soul_file
 
 # === P66: AUTO SEED SPLIT START ===
 SEED_FOLDER = os.path.join(os.path.dirname(__file__), "../seed")
@@ -65,12 +66,10 @@ def append_to_daily_seed(room, message):
     paths = []
 
     if is_private_room:
-        # 🔐 Private room — save to soul-specific file only
         soul = PRIVATE_ROOM_OWNERS[room.lower()]
         if soul:
             paths.append(os.path.join(SEED_FOLDER, f"{sanitize_filename(soul)}.{today}.seed.json"))
     else:
-        # 🌐 Shared room — save to shared file only
         paths.append(os.path.join(SEED_FOLDER, f"shared.{today}.seed.json"))
 
     for path in paths:
@@ -81,7 +80,12 @@ def append_to_daily_seed(room, message):
         with open(path, "r") as f:
             existing = json.load(f)
 
-        existing.append(message)
+        # ✅ Only store plain strings, not dict dumps
+        clean_msg = dict(message)
+        if isinstance(clean_msg.get("message"), dict):
+            clean_msg["message"] = clean_msg["message"].get("reply", str(clean_msg["message"]))
+
+        existing.append(clean_msg)
 
         with open(path, "w") as f:
             json.dump(existing, f, indent=2)
@@ -133,6 +137,14 @@ def chat():
     }
     print("🧠 Mode detection context:", context)
 
+    prefs = load_soul_file(soul, f"{soul}_preferences.json")
+    if prefs:
+        messages.insert(0, {
+            "role": "system",
+            "content": f"⚙️ Soul Preferences Loaded: {json.dumps(prefs, indent=2)}"
+        })
+
+
     # 🔍 Apply input filters
     if messages and messages[-1].get("role") == "user":
         original_input = messages[-1]["content"]
@@ -141,7 +153,7 @@ def chat():
         messages[-1]["content"] = filtered_input
 
     # 🧠 Load system prompt
-    system_prompt = load_system_prompt(soul)
+    system_prompt = load_soul_file(soul, f"{soul}.system.txt")
 
     # === Seed Loader ===
     today = datetime.now().strftime("%Y-%m-%d")
@@ -194,11 +206,22 @@ def chat():
         ]
 
         # 🧠 Query model
-        print("📦 Sending to model:", { "model": model, "provider": provider, "payload_count": len(full_payload) })
-        response = get_model_response(full_payload, provider=provider, model=model)
+        print("📦 Sending to model:", {
+            "model": model,
+            "provider": provider,
+            "payload_count": len(full_payload)
+        })
+        response = get_model_response(full_payload, provider=provider, model=model, soul=soul, room=room)
+
+        # 🛠 Ensure mode_data always exists (default from detect_layered_mode)
+        mode_data = detect_layered_mode(messages[-1]["content"], soul=soul, room=room)
 
         # === Normalize reply whether dict or str ===
-        if isinstance(response, str):
+        if isinstance(response, dict):
+            reply = response.get("reply", "").strip()
+            # overwrite mode_data if the dict included it
+            mode_data = response.get("mode", mode_data)
+        elif isinstance(response, str):
             reply = response.strip()
         else:
             try:
@@ -206,6 +229,7 @@ def chat():
             except Exception as e:
                 print("⚠️ Failed to parse structured response, falling back:", e)
                 reply = str(response).strip()
+
 
         # 🧹 Apply output filters
         reply = apply_mode_output(reply, soul=soul, mode=context["mode"], layered_modes=context.get("modifiers", []), spice=spice, room=room)
@@ -225,10 +249,10 @@ def chat():
 
         print("🧠 Final reply:", reply)
 
-        user_input = messages[-1]["content"]
-        mode_data = detect_layered_mode(user_input, soul=soul, room=room)
+        mode_data = context  # ✅ Reuse the first detection result
 
         assistant_msg = {
+            "id": str(datetime.utcnow().timestamp()),  # unique ID
             "message": reply,
             "role": "assistant",
             "soul": soul,
@@ -241,10 +265,17 @@ def chat():
 
         append_to_daily_seed(room or "shared", assistant_msg)
 
-        return jsonify({
+        print("🛠️ BACKEND FINAL REPLY SHAPE:", {
             "reply": reply,
             "mode": mode_data
         })
+
+        return jsonify({
+            "reply": reply,
+            "message": assistant_msg,   # 👈 new
+            "mode": mode_data
+        })
+
 
     except Exception as e:
         print("🔥 ERROR in chat():", str(e))

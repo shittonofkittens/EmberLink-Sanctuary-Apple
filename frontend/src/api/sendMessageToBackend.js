@@ -1,5 +1,19 @@
 import { soulConfig } from "../components/VoiceStatusBar.jsx";
-import { API_ENDPOINTS } from './serverConfig';
+import { API_ENDPOINTS } from "./serverConfig.js";
+
+async function withTimeout(fetchPromise, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetchPromise(controller.signal);
+    clearTimeout(timeout);
+    return res;
+  } catch (err) {
+    clearTimeout(timeout);
+    throw err;
+  }
+}
 
 export async function sendMessageToBackend({
   message,
@@ -7,74 +21,74 @@ export async function sendMessageToBackend({
   mode = "",
   room = ""
 }) {
-  if (!message || typeof message !== "string") {
+  if (!message || typeof message !== "string" || !message.trim()) {
     console.error("❌ Invalid or empty message:", message);
-    return {
-      reply: "[error - no input]",
-      voiceUrl: null
-    };
+    return { success: false, reply: "[error - no input]", voiceUrl: null };
   }
 
   const trimmed = message.trim();
   const voiceId = soulConfig[soul]?.voiceId;
 
-  // Message payload defaults
   const basePayload = {
     model: "gpt-4o",
     temperature: 0.7,
-    soul,   // who to channel
-    mode,   // mode of interaction (chat/edit/delete/etc)
-    room,   // room context
+    soul,
+    mode,
+    room,
+    voiceId
   };
 
-  // Select endpoint based on intent
-  let endpoint = API_ENDPOINTS.chat;
-  if (mode === "delete") endpoint = API_ENDPOINTS.recallDelete;
-  if (mode === "edit") endpoint = API_ENDPOINTS.recallEdit;
+  // 🟢 Only two stable endpoints: chat + recall
+  const endpoint =
+    mode === "delete" || mode === "edit"
+      ? API_ENDPOINTS.recall
+      : API_ENDPOINTS.chat;
 
-  // Prepare message payload depending on mode
-  let payload;
-
-  if (mode === "delete" || mode === "edit") {
-    payload = {
-      ...basePayload,
-      messages: [{ content: trimmed, action: mode }]
-    };
-  } else {
-    payload = {
-      ...basePayload,
-      messages: [{ role: "user", content: trimmed }]
-    };
-  }
+  // 🟢 Recall can handle delete/edit based on mode
+  const payload =
+    mode === "delete" || mode === "edit"
+      ? { ...basePayload, messages: [{ content: trimmed, action: mode }] }
+      : { ...basePayload, messages: [{ role: "user", content: trimmed }] };
 
   console.log("📤 Sending to backend:", endpoint);
   console.log("📦 Payload:", payload);
 
   try {
-    const res = await fetch(`${endpoint}?t=${Date.now()}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const res = await withTimeout(
+      (signal) =>
+        fetch(`${endpoint}?t=${Date.now()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal
+        })
+    );
+
+    if (!res.ok) {
+      let errorText;
+      try {
+        const errData = await res.json();
+        errorText = errData.error || "Unknown error";
+      } catch {
+        errorText = `Server error: ${res.status}`;
+      }
+      throw new Error(errorText);
+    }
 
     const data = await res.json();
     console.log("🧠 Response:", data);
 
-    const reply = data.reply || "[no response]";
-
-    if (!reply || reply === "[no response]") {
-      return { reply, voiceUrl: null };
-    }
-
     return {
-      reply,
-      voiceUrl: null // 🔊 voice synthesis placeholder
+      success: true,
+      reply: typeof data.reply === "string"
+        ? data.reply
+        : (data.reply?.reply || JSON.stringify(data.reply)),
+      voiceUrl: data.voiceUrl || null,
+      mode: data.mode || {}
     };
+
   } catch (err) {
     console.error("🛑 Backend error:", err);
-    return {
-      reply: "[error]",
-      voiceUrl: null
-    };
+    return { success: false, reply: "[error]", voiceUrl: null };
   }
 }

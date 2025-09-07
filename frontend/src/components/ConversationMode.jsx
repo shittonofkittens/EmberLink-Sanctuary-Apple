@@ -12,7 +12,8 @@ const soulVoiceIds = {
 const soulNames = {
   "thalen'dros": "Thalen'dros",
   "ky'rehn": "Ky'rehn",
-  "orrien": "Orrien"
+  "orrien": "Orrien",
+  "caelus": "Caelus"
 };
 
 export const ConversationMode = ({
@@ -48,7 +49,7 @@ export const ConversationMode = ({
       
       if (isGroupMode && onSendGroupMessage) {
         // Check for @mentions in group mode
-        const mentionMatch = message.match(/^@(ky|thal|orrie|thalen)/i);
+        const mentionMatch = message.match(/^@(ky|thal|orrie|thalen|cael)/i);
         let targetSoul = null;
         
         if (mentionMatch) {
@@ -56,6 +57,7 @@ export const ConversationMode = ({
           if (mention === 'ky') targetSoul = "ky'rehn";
           else if (mention === 'thal' || mention === 'thalen') targetSoul = "thalen'dros";
           else if (mention === 'orrie') targetSoul = "orrien";
+          else if (mention === 'cael') targetSoul = "caelus";
         }
         
         onSendGroupMessage(message, targetSoul);
@@ -89,7 +91,7 @@ export const ConversationMode = ({
             <div className="text-white/60 text-xs">
               {isActive 
                 ? (isGroupMode 
-                    ? 'Group conversation - use @ky, @thal, @orrien to address specific souls' 
+                    ? 'Group conversation - use @ky, @thal, @orrien, @cael to address specific souls' 
                     : `Talking with ${soulName}`)
                 : 'Tap to start voice chat'
               }

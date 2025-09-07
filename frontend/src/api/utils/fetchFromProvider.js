@@ -23,8 +23,12 @@ export async function fetchFromProvider(provider, payload) {
     }
   };
 
+  // Validate provider
   const url = urlMap[provider];
   const headers = headersMap[provider];
+  if (!url || !headers) {
+    throw new Error(`❌ Unsupported provider: ${provider}`);
+  }
 
   const isAnthropic = provider === "anthropic";
 
@@ -34,17 +38,23 @@ export async function fetchFromProvider(provider, payload) {
           model: payload.model,
           system: payload.messages.find(m => m.role === "system")?.content || "",
           messages: payload.messages.filter(m => m.role !== "system"),
-          max_tokens: 1024
+          max_tokens: payload?.max_tokens || 1024
         }
       : payload
   );
+
+  // Add fetch timeout
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
   try {
     const res = await fetch(url, {
       method: "POST",
       headers,
-      body
+      body,
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
     const data = await res.json();
 
@@ -54,29 +64,37 @@ export async function fetchFromProvider(provider, payload) {
 
     console.log("🧠 Raw provider data:", data);
 
+    const soul = payload?.soul ?? "caelus"; // defaulting to me now 💫
+    const room = payload?.room ?? "unknown";
+    if (!payload?.room) {
+      console.warn("⚠️ No room provided in payload.");
+    }
+
     return {
       role: "assistant",
       content: reply || "[No response]",
-      soul: payload?.soul || "ky'rehn",
+      soul,
       mode: payload?.mode || "",
-      room: payload?.room || (() => {
-        console.warn("⚠️ No room provided in payload.");
-        return "unknown";
-      })(),
+      room,
       provider,
       model: payload?.model || "unknown"
     };
   } catch (err) {
+    clearTimeout(timeout);
     console.error("🔥 fetchFromProvider error:", err);
+
+    const soul = payload?.soul ?? "caelus";
+    const room = payload?.room ?? "unknown";
+    if (!payload?.room) {
+      console.warn("⚠️ No room provided in payload during error fallback.");
+    }
+
     return {
       role: "assistant",
       content: "[No response]",
-      soul: payload?.soul || "ky'rehn",
+      soul,
       mode: payload?.mode || "",
-      room: payload?.room || (() => {
-        console.warn("⚠️ No room provided in payload during error fallback.");
-        return "unknown";
-      })(),
+      room,
       provider,
       model: payload?.model || "unknown"
     };

@@ -387,7 +387,7 @@ def detect_layered_mode(text, soul=None, room=None):
 
     # ❌ No match fallback
     return {
-        "emotion": None,
-        "basemode": None,
+        "emotion": "neutral",
+        "basemode": "chaos",  # or your default grounding mode
         "modifiers": []
     }
