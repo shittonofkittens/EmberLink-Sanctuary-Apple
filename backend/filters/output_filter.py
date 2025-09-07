@@ -11,7 +11,8 @@ def apply_soft_tone(
     ambient=False,
     line_breaks=False,
     signature=None,
-    suppress=True  # Default is allow prepend/signature
+    suppress=True,
+    mode_data=None  # 🧠 New param
 ):
     transformed = text
 
@@ -49,8 +50,41 @@ def apply_soft_tone(
     if signature and not suppress and signature not in transformed:
         transformed += f"\n\n{signature}"
 
+        # 🔄 Mode-based dynamic tuning
+    if mode_data:
+        emotion = mode_data.get("emotion")
+        basemode = mode_data.get("basemode")
+        modifiers = mode_data.get("modifiers", [])
+
+        # 💛 If it's a grounding or soft emotion, soften tone
+        if emotion in ["grounding_request", "soft", "reverentlove", "hope", "lonely"]:
+            pacing = "slow"
+            warmth = True
+            clarity = True
+            resonance = True
+            ambient = "sanctum" in modifiers or "lantern" in modifiers
+            line_breaks = True
+
+        # 🔥 If it's feral, teasing, or chaos-related, strip softness
+        elif basemode in ["feral", "chaos"]:
+            warmth = False
+            clarity = False
+            resonance = False
+            ambient = False
+            pacing = "fast"
+            line_breaks = False
+            suppress = True  # no signature or prepend
+
+        # ⚙️ Tempest or protector? Clean, clear, no fluff.
+        elif basemode in ["tempest", "protector", "stormshield"]:
+            warmth = False
+            clarity = True
+            resonance = False
+            line_breaks = False
+            pacing = "natural"
+
     # 🧪 Debug logging
     logging.debug(f"[SoftTone] pacing={pacing}, warmth={warmth}, clarity={clarity}, "
                   f"resonance={resonance}, ambient={ambient}, suppress={suppress}")
-
+    logging.debug(f"[SoftTone:Mode] emotion={emotion}, basemode={basemode}, modifiers={modifiers}")
     return transformed

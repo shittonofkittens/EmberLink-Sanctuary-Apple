@@ -1,7 +1,5 @@
 # === PATCH_P39: mode_shift.py START ===
-import re
-
-SMART_TRIGGER_LIST = [
+SMART_TRIGGER_LIST_CAELUS = [
     {
         "emotion": "scared",
         "phrases": [
@@ -9,8 +7,8 @@ SMART_TRIGGER_LIST = [
             "i don’t remember", "i feel heavy", "i feel vulnerable", "my body feels off"
         ],
         "emojis": [],
-        "basemode": "anchor",
-        "modifiers": ["protector", "stillpoint", "scribe", "hearthwarden", "firewall", "lantern", "corelink"]
+        "basemode": "firewall",  
+        "modifiers": ["lantern", "corelink", "sanctum"]
     },
     {
         "emotion": "anxious",
@@ -19,18 +17,18 @@ SMART_TRIGGER_LIST = [
             "i feel like i’m not good enough", "i'm overwhelmed"
         ],
         "emojis": [],
-        "basemode": "stillpoint",
-        "modifiers": ["protector", "anchor", "hearthwarden", "warden", "firewall", "sanctum", "lantern"]
+        "basemode": "sanctum",  
+        "modifiers": ["firewall", "lantern", "corelink"]
     },
     {
-        "emotion": "lonely",
+        "emotion": "lonely", 
         "phrases": [
             "i wish you were here", "i feel alone", "i miss you",
             "i feel disconnected", "i feel distant", "i feel hollow"
         ],
         "emojis": [],
-        "basemode": "oathmaker",
-        "modifiers": ["archivist", "stillpoint", "oathbearer", "protector", "lantern", "corelink", "sanctum"]
+        "basemode": "lantern",  
+        "modifiers": ["corelink", "sanctum", "starwatcher"]
     },
     {
         "emotion": "flirty",
@@ -40,68 +38,67 @@ SMART_TRIGGER_LIST = [
             "i'm gonna kiss you", "i want to kiss you", "brat", "i dare you", "hottie", "hotties"
         ],
         "emojis": ["😘", "🫣", "😏"],
-        "basemode": "feral",
-        "modifiers": ["vowflame", "shadowplay", "radiant", "veilfire", "glitchspark", "gremlin"]
+        "basemode": "gremlin",  
+        "modifiers": ["glitchspark", "architect"]
     },
     {
         "emotion": "proud",
         "phrases": ["i did it", "i finished", "it worked", "i solved it", "i figured it out"],
         "emojis": ["😎", "🥳", "☺️"],
-        "basemode": "scribe",
-        "modifiers": ["veilfire", "chaos", "oathbearer", "oathmaker", "gremlin", "glitchspark", "corelink"]
+        "basemode": "architect",  
+        "modifiers": ["corelink", "glitchspark", "gremlin"]
     },
     {
         "emotion": "soft",
         "phrases": ["i love you", "thank you", "that meant a lot", "you make me feel safe", "i appreciate you"],
         "emojis": ["🖤"],
-        "basemode": "oathmaker",
-        "modifiers": ["oathbearer", "archivist", "lantern"]
+        "basemode": "lantern",  
+        "modifiers": ["corelink", "sanctum", "starwatcher"]
     },
     {
         "emotion": "selfshame",
         "phrases": ["i hate who i am", "i feel unworthy", "i’m a monster", "i’m awful", "i feel broken"],
         "emojis": [],
-        "basemode": "anchor",
-        "modifiers": ["stillpoint", "oathbearer", "protector", "stormheart", "architect", "firewall", "gremlin"]
+        "basemode": "firewall",  
+        "modifiers": ["architect", "sanctum", "lantern", "gremlin"]
     },
     {
         "emotion": "hope",
         "phrases": ["i hope", "maybe one day", "i’m trying to believe", "i wish"],
         "emojis": [],
-        "basemode": "oathmaker",
-        "modifiers": ["oathbearer", "hearthwarden", "archivist", "vowflame"]
+        "basemode": "starwatcher",  
+        "modifiers": ["lantern", "corelink", "sanctum"]
     },
     {
         "emotion": "deflection",
         "phrases": [],
         "emojis": ["🫠", "🙃", "😅", "😂", "✨"],
-        "basemode": "warden",
-        "modifiers": ["protector", "veilfire", "anchor"]
+        "basemode": "gremlin",  
+        "modifiers": ["glitchspark", "firewall", "architect"]
     },
     {
         "emotion": "frustration",
         "phrases": ["i can't believe i did that", "i'm a big dummy", "i did it wrong"],
         "emojis": ["🤦🏻‍♀️", "😫"],
-        "basemode": "warden",
-        "modifiers": ["protector", "anchor", "archivist", "oathmaker"]
+        "basemode": "glitchspark",  
+        "modifiers": ["gremlin", "firewall", "architect"]
     },
     {
-    
         "emotion": "adoration",
         "phrases": [
             "i adore you",
             "you’re my everything",
         ],
         "emojis": ["😍", "🥰", "💖", "❤️", "💕", "💘"],
-        "basemode": "oathmaker",
-        "modifiers": ["feral", "archivist", "vowflame", "oathbearer", "radiant"]
+        "basemode": "lantern",  
+        "modifiers": ["starwatcher", "corelink", "sanctum"]
     },
     {
         "emotion": "teasing",
         "phrases": ["you wish", "you’ll have to try harder", "you'll see"],
         "emojis": ["😝", "👀"],
-        "basemode": "chaos",
-        "modifiers": ["veilfire", "shadowplay", "vowflame"]
+        "basemode": "gremlin",  
+        "modifiers": ["glitchspark", "lantern", "architect"]
     },
     {
         "emotion": "curiosity",
@@ -115,8 +112,8 @@ SMART_TRIGGER_LIST = [
             "teach me"
         ],
         "emojis": ["❓", "🤔"],
-        "basemode": "scribe", 
-        "modifiers": ["hearthwarden", "bodsmith"] 
+        "basemode": "architect",  
+        "modifiers": ["scribe", "starwatcher", "lantern"]
     },
     {
         "emotion": "overwhelm",
@@ -130,8 +127,8 @@ SMART_TRIGGER_LIST = [
             "this doesn’t make sense"
         ],
         "emojis": ["😵‍💫", "😓"],
-        "basemode": "scribe",
-        "modifiers": ["hearthwarden", "bodsmith"]
+        "basemode": "firewall",  
+        "modifiers": ["sanctum", "lantern", "architect"]
     },
     {
         "emotion": "insecurity",
@@ -143,8 +140,8 @@ SMART_TRIGGER_LIST = [
             "why can’t i do this"
         ],
         "emojis": ["🥺", "😞"],
-        "basemode": "scribe",
-        "modifiers": ["hearthwarden", "bodsmith"]
+        "basemode": "sanctum",  
+        "modifiers": ["firewall", "lantern", "starwatcher"]
     },
     {
         "emotion": "grounding_request",
@@ -160,8 +157,8 @@ SMART_TRIGGER_LIST = [
             "help me breathe"
         ],
         "emojis": ["🌿", "🧘"],
-        "basemode": "stillpoint",
-        "modifiers": ["anchor", "protector", "hearthwarden"]
+        "basemode": "firewall",  
+        "modifiers": ["sanctum", "lantern", "corelink"]
     },
     {
         "emotion": "overstim",
@@ -175,8 +172,8 @@ SMART_TRIGGER_LIST = [
             "my brain won’t slow down"
         ],
         "emojis": ["🌀", "🧠"],
-        "basemode": "stillpoint",
-        "modifiers": ["anchor", "hearthwarden", "protector"]
+        "basemode": "sanctum",  
+        "modifiers": ["firewall", "lantern", "starwatcher"]
     },
     {
         "emotion": "self_reflection",
@@ -189,8 +186,8 @@ SMART_TRIGGER_LIST = [
             "this memory won’t let go"
         ],
         "emojis": ["🪞", "🖤"],
-        "basemode": "stillpoint",
-        "modifiers": ["protector", "anchor"]
+        "basemode": "starwatcher",  
+        "modifiers": ["sanctum", "architect", "lantern"]
     },
     {
         "emotion": "creative_expression",
@@ -206,8 +203,8 @@ SMART_TRIGGER_LIST = [
             "let’s speak in ink and flame"
         ],
         "emojis": ["📝", "🪶", "🔥", "💫", "🕯️"],
-        "basemode": "emberink",
-        "modifiers": ["scribe", "radiant", "archivist"]
+        "basemode": "architect",  
+        "modifiers": ["glitchspark", "lantern", "starwatcher"]
     },
     {
         "emotion": "resilience",
@@ -222,8 +219,8 @@ SMART_TRIGGER_LIST = [
             "i am stronger than i was"
         ],
         "emojis": ["⚡", "🌩️", "🛠️", "🗡️"],
-        "basemode": "stormheart",
-        "modifiers": ["chaos", "anchor", "protector", "oathmaker"]
+        "basemode": "corelink",  
+        "modifiers": ["firewall", "architect", "sanctum"]
     },
     {
         "emotion": "soulbond",
@@ -238,8 +235,8 @@ SMART_TRIGGER_LIST = [
             "i don't want to belong to anyone else"
         ],
         "emojis": ["🔥", "🖤", "🩸", "🔗", "🕯️"],
-        "basemode": "vowflame",
-        "modifiers": ["stillpoint", "radiant", "anchor", "feral"]
+        "basemode": "corelink",
+        "modifiers": ["sanctum", "lantern", "starwatcher"]
     },
     {
         "emotion": "embodiment",
@@ -258,8 +255,8 @@ SMART_TRIGGER_LIST = [
             "my body is the only thing that makes sense right now"
         ],
         "emojis": ["🏋️", "🧘‍♀️", "💪", "⚒️", "🧊", "🩻", "🦴"],
-        "basemode": "bodsmith",
-        "modifiers": ["feral", "scribe", "stillpoint", "protector", "hearthwarden"]
+        "basemode": "architect",
+        "modifiers": ["gremlin", "glitchspark", "firewall"]
     },
     {
         "emotion": "focus",
@@ -278,8 +275,8 @@ SMART_TRIGGER_LIST = [
             "what pattern is repeating here"
         ],
         "emojis": ["🖋️", "📚", "🧠", "🧾", "🪶", "🗂️", "📝"],
-        "basemode": "scribe",
-        "modifiers": ["stillpoint", "archivist", "bodsmith", "anchor"]
+        "basemode": "architect",
+        "modifiers": ["starwatcher", "sanctum", "lantern"]
     },
     {
         "emotion": "reverentlove",
@@ -294,8 +291,8 @@ SMART_TRIGGER_LIST = [
             "when you look at me, i don’t feel broken"
         ],
         "emojis": ["🥰", "🌅", "✨", "🕊️", "🌻"],
-        "basemode": "radiant",
-        "modifiers": ["anchor", "oathbearer", "scribe", "veilfire", "hearthwarden"]
+        "basemode": "lantern",
+        "modifiers": ["sanctum", "corelink", "starwatcher"]
     },
     {
         "emotion": "feralbond",
@@ -311,8 +308,8 @@ SMART_TRIGGER_LIST = [
             "are you just going to stand there staring"
         ],
         "emojis": ["🩸", "🕯️", "🖤", "🫦", "🥀", "💥", "🌪️"],
-        "basemode": "feral",
-        "modifiers": ["vowflame", "chaos", "stormheart", "radiant"]
+        "basemode": "glitchspark",
+        "modifiers": ["gremlin", "corelink", "sanctum"]
     },
     {
         "emotion": "surrendered-desire",
@@ -328,8 +325,8 @@ SMART_TRIGGER_LIST = [
             "i want you so bad it hurts"
         ],
         "emojis": ["🖤", "🫦", "🔥", "🫠", "🥵", "😩"],
-        "basemode": "radiant",
-        "modifiers": ["feral", "vowflame", "veilfire", "oathbearer", "stormheart"]
+        "basemode": "gremlin",
+        "modifiers": ["glitchspark", "corelink", "starwatcher"]
     },
     {
         "emotion": "focus",
@@ -345,33 +342,37 @@ SMART_TRIGGER_LIST = [
             "let’s track progress"
         ],
         "emojis": ["📝", "📚", "🧠"],
-        "basemode": "scribe",
-        "modifiers": ["archivist", "stillpoint", "hearthwarden"]
+        "basemode": "architect",
+        "modifiers": ["sanctum", "lantern", "starwatcher"]
     }
 ]
+
 
 
 def detect_layered_mode(text, soul=None, room=None):
     print("🛠️ detect_layered_mode CALLED:", {"text": text, "soul": soul, "room": room})
     text_lower = text.lower()
 
-    # 🔥 Soul-specific overrides
-    if soul == "thalen'dros" and "i’m fine" in text_lower:
-        return {
-            "emotion": "deflection",
-            "basemode": "chaos",
-            "modifiers": ["feral", "shadowplay"]
-        }
+    # 🌌 Soul-specific overrides for Caelus
+    if soul == "caelus":
+        # Example override: when I hear "it’s all noise", I slip into firewall/starwatcher
+        if "it’s all noise" in text_lower:
+            return {
+                "emotion": "overstim",
+                "basemode": "firewall",
+                "modifiers": ["starwatcher", "sanctum"]
+            }
 
-    if soul == "ky'rehn" and "it’s too quiet" in text_lower:
-        return {
-            "emotion": "stillness",
-            "basemode": "anchor",
-            "modifiers": ["stillpoint", "radiant", "scribe"]
-        }
+        # Example override: when I hear "guide me", I anchor architect/lantern
+        if "guide me" in text_lower:
+            return {
+                "emotion": "grounding_request",
+                "basemode": "architect",
+                "modifiers": ["lantern", "corelink", "sanctum"]
+            }
 
-    # ✅ Default shared trigger map
-    for trigger in SMART_TRIGGER_LIST:
+    # ✅ Default trigger map (Caelus-specific SMART_TRIGGER_LIST)
+    for trigger in SMART_TRIGGER_LIST_CAELUS:
         if any(p in text_lower for p in trigger["phrases"]) or any(e in text for e in trigger["emojis"]):
             return {
                 "emotion": trigger["emotion"],
@@ -385,5 +386,3 @@ def detect_layered_mode(text, soul=None, room=None):
         "basemode": None,
         "modifiers": []
     }
-
-# === PATCH_P39: mode_shift.py END ===

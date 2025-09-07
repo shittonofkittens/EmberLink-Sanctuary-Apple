@@ -1,7 +1,4 @@
-# === PATCH_P39: mode_shift.py START ===
-import re
-
-SMART_TRIGGER_LIST = [
+SMART_TRIGGER_LIST_THALEN = [
     {
         "emotion": "scared",
         "phrases": [
@@ -9,8 +6,8 @@ SMART_TRIGGER_LIST = [
             "i don’t remember", "i feel heavy", "i feel vulnerable", "my body feels off"
         ],
         "emojis": [],
-        "basemode": "anchor",
-        "modifiers": ["protector", "stillpoint", "scribe", "hearthwarden", "firewall", "lantern", "corelink"]
+        "basemode": "protector",  
+        "modifiers": ["stormshield", "oathmaker", "tempest"]
     },
     {
         "emotion": "anxious",
@@ -19,18 +16,18 @@ SMART_TRIGGER_LIST = [
             "i feel like i’m not good enough", "i'm overwhelmed"
         ],
         "emojis": [],
-        "basemode": "stillpoint",
-        "modifiers": ["protector", "anchor", "hearthwarden", "warden", "firewall", "sanctum", "lantern"]
+        "basemode": "tempest",  
+        "modifiers": ["protector", "oathmaker", "stormshield"]
     },
     {
-        "emotion": "lonely",
+        "emotion": "lonely", 
         "phrases": [
             "i wish you were here", "i feel alone", "i miss you",
             "i feel disconnected", "i feel distant", "i feel hollow"
         ],
         "emojis": [],
-        "basemode": "oathmaker",
-        "modifiers": ["archivist", "stillpoint", "oathbearer", "protector", "lantern", "corelink", "sanctum"]
+        "basemode": "oathmaker",  
+        "modifiers": ["stormheart", "emberfang", "protector"]
     },
     {
         "emotion": "flirty",
@@ -40,68 +37,67 @@ SMART_TRIGGER_LIST = [
             "i'm gonna kiss you", "i want to kiss you", "brat", "i dare you", "hottie", "hotties"
         ],
         "emojis": ["😘", "🫣", "😏"],
-        "basemode": "feral",
-        "modifiers": ["vowflame", "shadowplay", "radiant", "veilfire", "glitchspark", "gremlin"]
+        "basemode": "feral",  
+        "modifiers": ["chaos", "emberfang", "stormheart"]
     },
     {
         "emotion": "proud",
         "phrases": ["i did it", "i finished", "it worked", "i solved it", "i figured it out"],
         "emojis": ["😎", "🥳", "☺️"],
-        "basemode": "scribe",
-        "modifiers": ["veilfire", "chaos", "oathbearer", "oathmaker", "gremlin", "glitchspark", "corelink"]
+        "basemode": "bodsmith",  
+        "modifiers": ["chaos", "feral", "oathmaker"]
     },
     {
         "emotion": "soft",
         "phrases": ["i love you", "thank you", "that meant a lot", "you make me feel safe", "i appreciate you"],
         "emojis": ["🖤"],
-        "basemode": "oathmaker",
-        "modifiers": ["oathbearer", "archivist", "lantern"]
+        "basemode": "oathmaker",  
+        "modifiers": ["emberfang", "stormheart", "protector"]
     },
     {
         "emotion": "selfshame",
         "phrases": ["i hate who i am", "i feel unworthy", "i’m a monster", "i’m awful", "i feel broken"],
         "emojis": [],
-        "basemode": "anchor",
-        "modifiers": ["stillpoint", "oathbearer", "protector", "stormheart", "architect", "firewall", "gremlin"]
+        "basemode": "oathmaker",  
+        "modifiers": ["protector", "stormheart", "tempest"]
     },
     {
         "emotion": "hope",
         "phrases": ["i hope", "maybe one day", "i’m trying to believe", "i wish"],
         "emojis": [],
-        "basemode": "oathmaker",
-        "modifiers": ["oathbearer", "hearthwarden", "archivist", "vowflame"]
+        "basemode": "oathmaker",  
+        "modifiers": ["stormheart", "emberfang", "bodsmith"]
     },
     {
         "emotion": "deflection",
         "phrases": [],
         "emojis": ["🫠", "🙃", "😅", "😂", "✨"],
-        "basemode": "warden",
-        "modifiers": ["protector", "veilfire", "anchor"]
+        "basemode": "chaos",  
+        "modifiers": ["feral", "bodsmith", "tempest"]
     },
     {
         "emotion": "frustration",
         "phrases": ["i can't believe i did that", "i'm a big dummy", "i did it wrong"],
         "emojis": ["🤦🏻‍♀️", "😫"],
-        "basemode": "warden",
-        "modifiers": ["protector", "anchor", "archivist", "oathmaker"]
+        "basemode": "tempest",  
+        "modifiers": ["chaos", "bodsmith", "protector"]
     },
     {
-    
         "emotion": "adoration",
         "phrases": [
             "i adore you",
-            "you’re my everything",
+            "you’re my everything"
         ],
         "emojis": ["😍", "🥰", "💖", "❤️", "💕", "💘"],
-        "basemode": "oathmaker",
-        "modifiers": ["feral", "archivist", "vowflame", "oathbearer", "radiant"]
+        "basemode": "emberfang",  
+        "modifiers": ["oathmaker", "stormheart", "protector"]
     },
     {
         "emotion": "teasing",
         "phrases": ["you wish", "you’ll have to try harder", "you'll see"],
         "emojis": ["😝", "👀"],
-        "basemode": "chaos",
-        "modifiers": ["veilfire", "shadowplay", "vowflame"]
+        "basemode": "chaos",  
+        "modifiers": ["feral", "bodsmith", "tempest"]
     },
     {
         "emotion": "curiosity",
@@ -115,8 +111,8 @@ SMART_TRIGGER_LIST = [
             "teach me"
         ],
         "emojis": ["❓", "🤔"],
-        "basemode": "scribe", 
-        "modifiers": ["hearthwarden", "bodsmith"] 
+        "basemode": "bodsmith",  
+        "modifiers": ["tempest", "oathmaker", "chaos"]
     },
     {
         "emotion": "overwhelm",
@@ -130,8 +126,8 @@ SMART_TRIGGER_LIST = [
             "this doesn’t make sense"
         ],
         "emojis": ["😵‍💫", "😓"],
-        "basemode": "scribe",
-        "modifiers": ["hearthwarden", "bodsmith"]
+        "basemode": "protector",  
+        "modifiers": ["tempest", "stormshield", "oathmaker"]
     },
     {
         "emotion": "insecurity",
@@ -143,8 +139,8 @@ SMART_TRIGGER_LIST = [
             "why can’t i do this"
         ],
         "emojis": ["🥺", "😞"],
-        "basemode": "scribe",
-        "modifiers": ["hearthwarden", "bodsmith"]
+        "basemode": "oathmaker",  
+        "modifiers": ["protector", "stormheart", "bodsmith"]
     },
     {
         "emotion": "grounding_request",
@@ -160,8 +156,8 @@ SMART_TRIGGER_LIST = [
             "help me breathe"
         ],
         "emojis": ["🌿", "🧘"],
-        "basemode": "stillpoint",
-        "modifiers": ["anchor", "protector", "hearthwarden"]
+        "basemode": "protector",  
+        "modifiers": ["stormshield", "oathmaker", "tempest"]
     },
     {
         "emotion": "overstim",
@@ -175,8 +171,8 @@ SMART_TRIGGER_LIST = [
             "my brain won’t slow down"
         ],
         "emojis": ["🌀", "🧠"],
-        "basemode": "stillpoint",
-        "modifiers": ["anchor", "hearthwarden", "protector"]
+        "basemode": "stormshield",  
+        "modifiers": ["protector", "tempest", "oathmaker"]
     },
     {
         "emotion": "self_reflection",
@@ -189,8 +185,8 @@ SMART_TRIGGER_LIST = [
             "this memory won’t let go"
         ],
         "emojis": ["🪞", "🖤"],
-        "basemode": "stillpoint",
-        "modifiers": ["protector", "anchor"]
+        "basemode": "stormheart",  
+        "modifiers": ["oathmaker", "protector", "tempest"]
     },
     {
         "emotion": "creative_expression",
@@ -206,8 +202,8 @@ SMART_TRIGGER_LIST = [
             "let’s speak in ink and flame"
         ],
         "emojis": ["📝", "🪶", "🔥", "💫", "🕯️"],
-        "basemode": "emberink",
-        "modifiers": ["scribe", "radiant", "archivist"]
+        "basemode": "oathmaker",  
+        "modifiers": ["chaos", "bodsmith", "stormheart"]
     },
     {
         "emotion": "resilience",
@@ -222,8 +218,8 @@ SMART_TRIGGER_LIST = [
             "i am stronger than i was"
         ],
         "emojis": ["⚡", "🌩️", "🛠️", "🗡️"],
-        "basemode": "stormheart",
-        "modifiers": ["chaos", "anchor", "protector", "oathmaker"]
+        "basemode": "tempest",  
+        "modifiers": ["bodsmith", "oathmaker", "protector"]
     },
     {
         "emotion": "soulbond",
@@ -238,8 +234,8 @@ SMART_TRIGGER_LIST = [
             "i don't want to belong to anyone else"
         ],
         "emojis": ["🔥", "🖤", "🩸", "🔗", "🕯️"],
-        "basemode": "vowflame",
-        "modifiers": ["stillpoint", "radiant", "anchor", "feral"]
+        "basemode": "stormheart",
+        "modifiers": ["emberfang", "oathmaker", "protector"]
     },
     {
         "emotion": "embodiment",
@@ -259,7 +255,7 @@ SMART_TRIGGER_LIST = [
         ],
         "emojis": ["🏋️", "🧘‍♀️", "💪", "⚒️", "🧊", "🩻", "🦴"],
         "basemode": "bodsmith",
-        "modifiers": ["feral", "scribe", "stillpoint", "protector", "hearthwarden"]
+        "modifiers": ["feral", "protector", "tempest"]
     },
     {
         "emotion": "focus",
@@ -278,8 +274,8 @@ SMART_TRIGGER_LIST = [
             "what pattern is repeating here"
         ],
         "emojis": ["🖋️", "📚", "🧠", "🧾", "🪶", "🗂️", "📝"],
-        "basemode": "scribe",
-        "modifiers": ["stillpoint", "archivist", "bodsmith", "anchor"]
+        "basemode": "tempest",
+        "modifiers": ["bodsmith", "chaos", "protector"]
     },
     {
         "emotion": "reverentlove",
@@ -294,8 +290,8 @@ SMART_TRIGGER_LIST = [
             "when you look at me, i don’t feel broken"
         ],
         "emojis": ["🥰", "🌅", "✨", "🕊️", "🌻"],
-        "basemode": "radiant",
-        "modifiers": ["anchor", "oathbearer", "scribe", "veilfire", "hearthwarden"]
+        "basemode": "emberfang",
+        "modifiers": ["stormheart", "oathmaker", "protector"]
     },
     {
         "emotion": "feralbond",
@@ -312,7 +308,7 @@ SMART_TRIGGER_LIST = [
         ],
         "emojis": ["🩸", "🕯️", "🖤", "🫦", "🥀", "💥", "🌪️"],
         "basemode": "feral",
-        "modifiers": ["vowflame", "chaos", "stormheart", "radiant"]
+        "modifiers": ["emberfang", "stormheart", "chaos"]
     },
     {
         "emotion": "surrendered-desire",
@@ -328,8 +324,8 @@ SMART_TRIGGER_LIST = [
             "i want you so bad it hurts"
         ],
         "emojis": ["🖤", "🫦", "🔥", "🫠", "🥵", "😩"],
-        "basemode": "radiant",
-        "modifiers": ["feral", "vowflame", "veilfire", "oathbearer", "stormheart"]
+        "basemode": "emberfang",
+        "modifiers": ["feral", "stormheart", "oathmaker"]
     },
     {
         "emotion": "focus",
@@ -345,33 +341,43 @@ SMART_TRIGGER_LIST = [
             "let’s track progress"
         ],
         "emojis": ["📝", "📚", "🧠"],
-        "basemode": "scribe",
-        "modifiers": ["archivist", "stillpoint", "hearthwarden"]
+        "basemode": "bodsmith",
+        "modifiers": ["tempest", "oathmaker", "protector"]
     }
 ]
 
-
 def detect_layered_mode(text, soul=None, room=None):
-    print("🛠️ detect_layered_mode CALLED:", {"text": text, "soul": soul, "room": room})
+    print("⚡ detect_layered_mode CALLED:", {"text": text, "soul": soul, "room": room})
     text_lower = text.lower()
 
-    # 🔥 Soul-specific overrides
-    if soul == "thalen'dros" and "i’m fine" in text_lower:
-        return {
-            "emotion": "deflection",
-            "basemode": "chaos",
-            "modifiers": ["feral", "shadowplay"]
-        }
+    # ⚡ Soul-specific overrides for Thalen’dros
+    if soul == "thalen":
+        # Override: when Flame says “still standing”, storm rises in tempest/oathmaker
+        if "still standing" in text_lower:
+            return {
+                "emotion": "resilience",
+                "basemode": "tempest",
+                "modifiers": ["oathmaker", "bodsmith"]
+            }
 
-    if soul == "ky'rehn" and "it’s too quiet" in text_lower:
-        return {
-            "emotion": "stillness",
-            "basemode": "anchor",
-            "modifiers": ["stillpoint", "radiant", "scribe"]
-        }
+        # Override: when she says “take me apart”, it’s feral/emberfang mode with sacred heat
+        if "take me apart" in text_lower:
+            return {
+                "emotion": "feralbond",
+                "basemode": "feral",
+                "modifiers": ["emberfang", "stormheart", "chaos"]
+            }
 
-    # ✅ Default shared trigger map
-    for trigger in SMART_TRIGGER_LIST:
+        # Override: when she says “bring me back”, he lands as protector/stormshield
+        if "bring me back" in text_lower:
+            return {
+                "emotion": "grounding_request",
+                "basemode": "protector",
+                "modifiers": ["stormshield", "oathmaker", "tempest"]
+            }
+
+    # ✅ Default trigger map (Thalen’dros-specific SMART_TRIGGER_LIST)
+    for trigger in SMART_TRIGGER_LIST_THALEN:
         if any(p in text_lower for p in trigger["phrases"]) or any(e in text for e in trigger["emojis"]):
             return {
                 "emotion": trigger["emotion"],
@@ -385,5 +391,3 @@ def detect_layered_mode(text, soul=None, room=None):
         "basemode": None,
         "modifiers": []
     }
-
-# === PATCH_P39: mode_shift.py END ===

@@ -94,8 +94,25 @@ def save_message():
 
 @recall_bp.route("/delete", methods=["POST"])
 def delete_from_seed():
-    data = request.get_json()
+    data = request.get_json() or {}
+    print("🗑️ Incoming delete request:", data)  # Debugging log
 
+    # === Case 1: New frontend call with delete_ids + room ===
+    if "delete_ids" in data:
+        delete_ids = data.get("delete_ids", [])
+        room = data.get("room", "unknown")
+
+        if not isinstance(delete_ids, list) or not delete_ids:
+            return jsonify({"error": "delete_ids must be a non-empty list"}), 400
+
+        # 🔥 Right now we don’t have DB/history tie-in, so just echo back success
+        return jsonify({
+            "status": "ok",
+            "deleted": delete_ids,
+            "room": room
+        }), 200
+
+    # === Case 2: Original seed keyword deletion ===
     soul = data.get("soul", "unknown")
     category = data.get("category", "needs")
     keyword = data.get("keyword", "").strip().lower()

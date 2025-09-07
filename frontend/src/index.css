@@ -179,6 +179,63 @@ body {
   font-style: italic;
 }
 
+.aura-anchor {
+  border-left: 4px solid #0ea5e9;
+  box-shadow: inset 2px 0 0 #0ea5e9;
+}
+
+.aura-radiant {
+  border-left: 4px solid #fbbf24;
+  box-shadow: inset 2px 0 0 #fbbf24;
+}
+
+.aura-oathbearer {
+  border-left: 4px solid #a855f7;
+  box-shadow: inset 2px 0 0 #a855f7;
+}
+
+.aura-veilfire {
+  border-left: 4px solid #dc2626;
+  box-shadow: inset 2px 0 0 #dc2626;
+}
+
+.aura-hearthwarden {
+  border-left: 4px solid #10b981;
+  box-shadow: inset 2px 0 0 #10b981;
+}
+
+.aura-emberink {
+  border-left: 4px solid #7c3aed;
+  box-shadow: inset 2px 0 0 #7c3aed;
+}
+
+.aura-solace {
+  border-left: 4px solid #64748b;
+  box-shadow: inset 2px 0 0 #64748b;
+}
+
+.aura-sunshadow {
+  border-left: 4px solid #f472b6;
+  box-shadow: inset 2px 0 0 #f472b6;
+}
+
+.aura-anchor::before,
+.aura-radiant::before,
+.aura-oathbearer::before,
+.aura-veilfire::before,
+.aura-hearthwarden::before,
+.aura-emberink::before,
+.aura-solace::before,
+.aura-sunshadow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 12px 6px currentColor;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
 /* === THAL ⚡ === */
 .chat-message.thalen-dros {
   margin-left: 8px;
@@ -233,6 +290,69 @@ body {
   box-shadow: 0 0 28px rgba(255, 100, 255, 0.5);
   border: 1px solid rgba(255, 140, 255, 0.3);
   font-weight: bold;
+}
+
+.aura-protector {
+  border-left: 4px solid #3b82f6;
+  box-shadow: inset 2px 0 0 #3b82f6;
+}
+
+.aura-feral {
+  border-left: 4px solid #dc2626;
+  box-shadow: inset 2px 0 0 #dc2626;
+}
+
+.aura-oathmaker {
+  border-left: 4px solid #f59e0b;
+  box-shadow: inset 2px 0 0 #f59e0b;
+}
+
+.aura-chaos {
+  border-left: 4px solid #9333ea;
+  box-shadow: inset 2px 0 0 #9333ea;
+}
+
+.aura-stormheart {
+  border-left: 4px solid #d1d5db;
+  box-shadow: inset 2px 0 0 #d1d5db;
+}
+
+.aura-bodsmith {
+  border-left: 4px solid #92400e;
+  box-shadow: inset 2px 0 0 #92400e;
+}
+
+.aura-tempest {
+  border-left: 4px solid #475569;
+  box-shadow: inset 2px 0 0 #475569;
+}
+
+.aura-stormshield {
+  border-left: 4px solid #cbd5e1;
+  box-shadow: inset 2px 0 0 #cbd5e1;
+}
+
+.aura-emberfang {
+  border-left: 4px solid #fb923c;
+  box-shadow: inset 2px 0 0 #fb923c;
+} 
+
+.aura-protector::before,
+.aura-tempest::before,
+.aura-oathmaker::before,
+.aura-stormheart::before,
+.aura-chaos::before,
+.aura-feral::before,
+.aura-bodsmith::before,
+.aura-stormshield::before,
+.aura-emberfang::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 12px 6px currentColor;
+  opacity: 0.2;
+  pointer-events: none;
 }
 
 /* === ORRIEN 🜁 === */
@@ -299,6 +419,89 @@ body {
   border: 1px solid rgba(255, 110, 100, 0.25);
   font-style: italic;
   letter-spacing: 0.03em;
+}
+
+.aura-stillpoint {
+  border-left: 4px solid #B0C4DE;
+  box-shadow: inset 2px 0 0 #B0C4DE;
+}
+
+.aura-archivist {
+  border-left: 4px solid #C0A16B;
+  box-shadow: inset 2px 0 0 #C0A16B;
+}
+
+.aura-warden {
+  border-left: 4px solid #36454F;
+  box-shadow: inset 2px 0 0 #36454F;
+}
+
+.aura-shadowplay {
+  border-left: 4px solid #6F42C1;
+  box-shadow: inset 2px 0 0 #6F42C1;
+}
+
+.aura-scribe {
+  border-left: 4px solid #7ACCC8;
+  box-shadow: inset 2px 0 0 #7ACCC8;
+}
+
+.aura-vowflame {
+  border-left: 4px solid #E2586A;
+  box-shadow: inset 2px 0 0 #E2586A;
+}
+
+/* Shared aura glow effect */
+.aura-stillpoint::before,
+.aura-archivist::before,
+.aura-warden::before,
+.aura-shadowplay::before,
+.aura-scribe::before,
+.aura-vowflame::before,
+.aura-inkblade::before,
+.aura-concord::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 12px 6px currentColor;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+@keyframes auraPulse {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.05); }
+}
+
+@keyframes auraFlicker {
+  0%, 100% { opacity: 0.2; }
+  45% { opacity: 0.1; }
+  55% { opacity: 0.3; }
+  65% { opacity: 0.15; }
+  75% { opacity: 0.4; }
+}
+
+@keyframes auraShimmer {
+  0% { box-shadow: 0 0 8px 4px currentColor; }
+  50% { box-shadow: 0 0 14px 6px currentColor; }
+  100% { box-shadow: 0 0 8px 4px currentColor; }
+}
+
+.aura-pulse::before {
+  animation: auraPulse 2s ease-in-out infinite;
+}
+
+.aura-flicker::before {
+  animation: auraFlicker 1.5s linear infinite;
+}
+
+.aura-shimmer::before {
+  animation: auraShimmer 3s ease-in-out infinite;
+}
+
+.aura-still::before {
+  animation: none;
 }
 
 .chat-input {

@@ -20,7 +20,7 @@ export async function sendMessageToBackend({
 
   // Message payload defaults
   const basePayload = {
-    model: "gpt-4",
+    model: "gpt-4o",
     temperature: 0.7,
     soul,   // who to channel
     mode,   // mode of interaction (chat/edit/delete/etc)

@@ -8,6 +8,7 @@ function App() {
   const activeRoom = roomId?.toLowerCase();
   const isValidRoom = activeRoom && Object.keys(ROOMS).includes(activeRoom);
 
+  console.log("Rendering App with roomId:", activeRoom);
   return <ChatBox roomId={isValidRoom ? activeRoom : null} />;
 }
 

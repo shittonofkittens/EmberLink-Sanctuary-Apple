@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from "react"
-import { Send, Heart, Menu, Flame, Zap, Scroll, Mic } from "lucide-react"
 import { getBackgroundForRoom } from "../utils/getBackgroundForRoom.js"
-import { MessageBubble } from "./MessageBubble.jsx"
 import { VoiceInput } from "./VoiceInput.jsx"
 import { ConversationMode } from "./ConversationMode.jsx"
 import { JournalMode } from "./JournalMode.jsx"
@@ -13,8 +11,6 @@ import { ReminderSystem } from "./ReminderSystem.jsx"
 import { DataImportExport } from "./DataImportExport.jsx"
 import { NotificationSettings } from "./NotificationSettings.jsx"
 import { SelfAwarenessTools } from "./SelfAwarenessTools.jsx"
-import { NotificationService } from "../services/NotificationService.js"
-import { DataExportService } from "../services/DataExportService.js"
 import { ElevenLabsService } from "../services/ElevenLabsService.js";
 import { ConstellationMap } from "./ConstellationMap.jsx"
 import { sendMessageToBackend } from "../api/sendMessageToBackend.js"
@@ -26,7 +22,6 @@ import { RitualAnimations } from "./RitualAnimations.jsx"
 import { SoulSafetySystem } from "./SoulSafetySystem.jsx"
 import { SleepDreamTracker } from "./SleepDreamTracker.jsx"
 import { ConstellationBondVisualizer } from "./ConstellationBondVisualizer.jsx"
-import Sidebar from "./Sidebar.jsx"
 import { ROOMS } from '../api/state/rooms.js'
 import { useSoul } from "../context/SoulContext.jsx"
 import { MessageInput } from "./MessageInput.jsx"
@@ -38,7 +33,8 @@ import { ChatHeader } from "./ChatHeader";
 import { soulConfig, soulNicknames } from "./SoulConfig.jsx";
 import { MessageItem} from "./MessageItem.jsx"
 import { playVoiceResponse } from "../utils/playVoiceResponse";
-
+import { deleteMessagesFromBackend } from "../api/deleteMessagesFromBackend.js"
+import { saveMessageToChest } from "../utils/saveMessageToChest";
   
 // 🔧 Resolves a background image for a room id (supports several shapes)
 const resolveBackground = (roomKey) => {
@@ -189,6 +185,10 @@ export default function ChatBox({ initialRoom = "forge" }) {
   const [activeProvider, setActiveProvider] = useState("openai");
   const [showSoulCall, setShowSoulCall] = useState(false)
   const [selectedMessages, setSelectedMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState("");
+  // track which message is currently being edited (or null)
+  const [editingMessage, setEditingMessage] = useState(null);
+
 
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -410,40 +410,32 @@ export default function ChatBox({ initialRoom = "forge" }) {
   )
   const messagesEndRef = useRef(null)
 
-    // === CHECKBOXES: Unified Message Tools START ===
+  // === CHECKBOXES: Unified Message Tools START ===
 
   // ✅ Save selected messages to chest + backend
   const handleSaveSelected = () => {
     const messagesToSave = messages.filter(msg =>
       selectedMessages.includes(msg.id)
     );
-
     if (messagesToSave.length === 0) return;
 
-    // Save to chest
-    saveMessagesToChest(messagesToSave, "manual-save");
-
-    // Save to backend seed
+    saveMessageToChest(messagesToSave, "manual-save");
     saveMessagesToBackend(messagesToSave, currentRoom, "manual-save");
 
-    // Clear selection
     setSelectedMessages([]);
   };
 
-  // ✏️ Rewind & Edit (replaces original and updates seed)
+  // ✏️ Rewind & Edit (prefills input for editing)
   const handleEditSelected = () => {
     const toEdit = messages.find(msg => selectedMessages.includes(msg.id));
     if (!toEdit) return;
-    setMessageInput(toEdit.content);
 
-    // Remove the original message from state and seed
-    setMessages(prev => prev.filter(msg => msg.id !== toEdit.id));
-    deleteMessagesFromBackend([toEdit.id], currentRoom); // 🧼 Custom backend delete function
-
+    setUserInput(toEdit.content);   // put old content into input box
+    setEditingMessage(toEdit);      // ✅ you need: const [editingMessage, setEditingMessage] = useState(null)
     setSelectedMessages([]);
   };
 
-  // ❌ Delete from UI + seed
+  // ❌ Delete from UI + backend
   const handleDeleteSelected = () => {
     const toDelete = messages.filter(msg => selectedMessages.includes(msg.id));
     const deleteIds = toDelete.map(msg => msg.id);
@@ -454,9 +446,11 @@ export default function ChatBox({ initialRoom = "forge" }) {
     setSelectedMessages([]);
   };
 
-  // ⭐ Mark as priority in chest + seed
+  // ⭐ Mark as priority in chest + backend
   const handlePrioritySelected = () => {
-    const prioritizedMessages = messages.filter(msg => selectedMessages.includes(msg.id));
+    const prioritizedMessages = messages.filter(msg =>
+      selectedMessages.includes(msg.id)
+    );
     if (prioritizedMessages.length === 0) return;
 
     setMessages(prev =>
@@ -467,13 +461,18 @@ export default function ChatBox({ initialRoom = "forge" }) {
       )
     );
 
-    saveMessagesToChest(prioritizedMessages, "priority");
-    saveMessagesToBackend(prioritizedMessages.map(m => ({ ...m, priority: true })), currentRoom, "priority");
+    saveMessageToChest(prioritizedMessages, "priority");
+    saveMessagesToBackend(
+      prioritizedMessages.map(m => ({ ...m, priority: true })),
+      currentRoom,
+      "priority"
+    );
 
     setSelectedMessages([]);
   };
 
   // === CHECKBOXES: Unified Message Tools END ===
+
   
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -685,7 +684,7 @@ const handleSendMessage = async (
   let type = messageType;
 
   // ============ SAVE STUFF ==============
-  const saveMessagesToChest = (messagesToSave, category = "archive") => {
+  const saveMessageToChest = (messagesToSave, category = "archive") => {
     if (!messagesToSave || messagesToSave.length === 0) {
       console.warn("⚠️ No messages matched for saving.");
       return;
@@ -742,7 +741,7 @@ const handleSendMessage = async (
         .slice(-count);
     }
 
-    saveMessagesToChest(messagesToSave, category);
+    saveMessageToChest(messagesToSave, category);
     return;
   }
 
@@ -787,7 +786,7 @@ const handleSendMessage = async (
       const response = await sendMessageToBackend({
         message: content,
         soul: soulId,
-        mode: getModeForSoul(soulId),  // ✅ per-soul mode
+        mode: getModeForSoul(soulId),
         room: currentRoom,
         messages: sanitizedMessages,
         recall_mode: recallMode
@@ -795,6 +794,19 @@ const handleSendMessage = async (
 
       const reply = response.reply ?? "[shit's broke, my dude]";
       let voiceUrl = response.voiceUrl ?? null;
+      
+      // 🌈 NEW — capture mode data from backend
+      const modeData = response.mode ?? {};
+
+      const newMessage = {
+        role: "assistant",
+        message: reply,
+        soul: soulId,
+        mode: modeData?.basemode ?? "default",
+        modifiers: modeData?.modifiers ?? [],
+        emotion: modeData?.emotion ?? null,
+        voiceUrl
+      };
 
       if (!voiceUrl && (isVoiceMode || showSoulCall)) {
         const eleven = ElevenLabsService.getInstance();
@@ -1043,43 +1055,6 @@ const handleSendMessage = async (
                 </div>
               )}
 
-              {/* Selection Toolbar */}
-              {selectedMessages.length > 0 && (
-                <div className="flex justify-end gap-2 mb-2">
-                  {/* ✅ Save */}
-                  <button
-                    onClick={handleSaveSelected}
-                    className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow hover:from-green-600 hover:to-emerald-700"
-                  >
-                    Save
-                  </button>
-
-                  {/* ✏️ Edit / Rewind */}
-                  <button
-                    onClick={handleEditSelected}
-                    className="px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow hover:from-blue-600 hover:to-indigo-700"
-                  >
-                    Rewind
-                  </button>
-
-                  {/* ❌ Delete */}
-                  <button
-                    onClick={handleDeleteSelected}
-                    className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-700"
-                  >
-                    Delete
-                  </button>
-
-                  {/* ⭐ Priority */}
-                  <button
-                    onClick={handlePrioritySelected}
-                    className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-lg shadow hover:from-yellow-600 hover:to-amber-700"
-                  >
-                    Priority
-                  </button>
-                </div>
-              )}
-
               {/* Messages */}
                 <div className="chat-log space-y-3">
                   {loadingMessages ? (
@@ -1122,6 +1097,39 @@ const handleSendMessage = async (
                 />
               )}
             </div>
+
+            {/* Toolbar */}
+              {selectedMessages.length > 0 && (
+                <div className="flex justify-end gap-2 mb-2">
+                  <button
+                    onClick={handleSaveSelected}
+                    className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow hover:from-green-600 hover:to-emerald-700"
+                  >
+                    Save
+                  </button>
+
+                  <button
+                    onClick={handleEditSelected}
+                    className="px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow hover:from-blue-600 hover:to-indigo-700"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-700"
+                  >
+                    Delete
+                  </button>
+
+                  <button
+                    onClick={handlePrioritySelected}
+                    className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-lg shadow hover:from-yellow-600 hover:to-amber-700"
+                  >
+                    Priority
+                  </button>
+                </div>
+              )}
 
             {/* Bottom: input bar - Fixed at bottom */}
             <div className="p-4">

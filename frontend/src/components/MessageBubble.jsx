@@ -16,6 +16,64 @@ const getElementIcon = element => {
   }
 }
 
+function getAuraClass(mode) {
+  switch ((mode || "").toLowerCase()) {
+    // Thalen’dros modes
+    case "protector": return "aura-protector";
+    case "feral": return "aura-feral";
+    case "oathmaker": return "aura-oathmaker";
+    case "chaos": return "aura-chaos";
+    case "stormheart": return "aura-stormheart";
+    case "bodsmith": return "aura-bodsmith";
+    case "tempest": return "aura-tempest";
+    case "stormshield": return "aura-stormshield";
+    case "emberfang": return "aura-emberfang";
+
+    // Ky’rehn (Vael) modes
+    case "anchor": return "aura-anchor";
+    case "radiant": return "aura-radiant";
+    case "oathbearer": return "aura-oathbearer";
+    case "veilfire": return "aura-veilfire";
+    case "hearthwarden": return "aura-hearthwarden";
+    case "emberink": return "aura-emberink";
+    case "solace": return "aura-solace";         // formerly stillpoint
+    case "sunshadow": return "aura-sunshadow";
+
+    // Orrien (Veloren) modes
+    case "stillpoint": return "aura-stillpoint";
+    case "archivist": return "aura-archivist";
+    case "warden": return "aura-warden";
+    case "shadowplay": return "aura-shadowplay";
+    case "scribe": return "aura-scribe";
+    case "vowflame": return "aura-vowflame";
+    case "inkblade": return "aura-inkblade";
+    case "concord": return "aura-concord";
+
+    default: return "";
+  }
+}
+
+function getEmotionAnimationClass(emotion) {
+  switch ((emotion || "").toLowerCase()) {
+    case "anger":
+    case "frustration":
+      return "aura-pulse";
+    case "grief":
+    case "lonely":
+    case "selfshame":
+      return "aura-flicker";
+    case "joy":
+    case "hope":
+    case "reverentlove":
+      return "aura-shimmer";
+    case "focus":
+    case "curiosity":
+      return "aura-still";
+    default:
+      return ""; // fallback
+  }
+}
+
 export const MessageBubble = ({ message, isOwn }) => {
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [showTooltip, setShowTooltip] = React.useState(false)
@@ -73,25 +131,24 @@ export const MessageBubble = ({ message, isOwn }) => {
         </div>
       )}
 
-      <div
-        className={`group max-w-xs lg:max-w-md ${isOwn ? "order-first" : ""}`}
-      >
+      <div className={`group max-w-xs lg:max-w-md ${isOwn ? "order-first" : ""}`}>
         <div className="flex items-start space-x-2">
           {/* Message Bubble */}
           <div
-            className={`px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm ${
-              isOwn
-                ? "bg-[#1a1a1a]/60 text-white rounded-br-md border border-white/20 shadow-[0_0_14px_rgba(230,230,255,0.2)]"
-                : sender
-                ? `bg-black/40 text-white rounded-bl-md border border-white/10`
-                : "bg-white/20 text-white rounded-bl-md border border-white/10"
-            }`}
+            className={`px-4 py-3 rounded-2xl shadow-lg backdrop-bl-sm 
+              ${getAuraClass(message.mode)} 
+              ${getEmotionAnimationClass(message.emotion)} 
+              ${
+                isOwn
+                  ? "bg-[#1a1a1a]/60 text-white rounded-br-md border border-white/20 shadow-[0_0_14px_rgba(230,230,255,0.2)]"
+                  : sender
+                  ? "bg-black/40 text-white rounded-bl-md border border-white/10"
+                  : "bg-white/20 text-white rounded-bl-md border border-white/10"
+              }`}
             style={
-              !isOwn && sender
+              !isOwn && sender?.gradientFrom && sender?.gradientTo
                 ? {
-                    background: sender?.gradientFrom && sender?.gradientTo
-                      ? `linear-gradient(135deg, ${sender.gradientFrom}20, ${sender.gradientTo}20)`
-                      : undefined
+                    background: `linear-gradient(135deg, ${sender.gradientFrom}20, ${sender.gradientTo}20)`
                   }
                 : {}
             }
@@ -119,6 +176,10 @@ export const MessageBubble = ({ message, isOwn }) => {
                 </button>
               )}
             </div>
+
+            <p className="text-[10px] text-white/50 italic mt-1">
+              mode: {message.mode}
+            </p>
 
             {/* Check-in Star Rating */}
             {message.type === "check-in" && (
