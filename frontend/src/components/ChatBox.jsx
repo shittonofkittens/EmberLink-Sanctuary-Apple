@@ -36,6 +36,7 @@ import { deleteMessagesFromBackend } from "../api/deleteMessagesFromBackend.js"
 import { roomDefinitions, pinnedRooms, otherRooms } from "../data/roomDefinitions"
 import { saveMessageToChest, forgetFromChest, readSavedLogs } from "../utils/storage.js";
 import { extractTargetSouls } from "../utils/mentions";
+import { API_ENDPOINTS } from "../api/serverConfig.js";
 import {
   isSoftSaveTrigger,
   isForgetTrigger,
@@ -220,11 +221,10 @@ export default function ChatBox({ initialRoom = "forge" }) {
     }
   }, [])
   
-  // Load saved messages from backend when component mounts
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`/api/history/load/${roomId}`)
+        const res = await fetch(API_ENDPOINTS.historyLoad(currentRoom));
         if (res.ok) {
           const data = await res.json();
           setRoomMessages(prev => ({
@@ -353,15 +353,20 @@ export default function ChatBox({ initialRoom = "forge" }) {
   }, [activeRoom]);
 
   // 🕰️ Auto-save messages every 10 seconds (Part 4)
+  const lastSavedMessageCount = useRef(0);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      if (messages.length > 0 && currentRoom) {
-        saveMessagesToBackend(messages, currentRoom);
+      if (currentRoom && messages.length > lastSavedMessageCount.current) {
+        const newMessages = messages.slice(lastSavedMessageCount.current);
+        saveMessagesToBackend(newMessages, currentRoom);
+        lastSavedMessageCount.current = messages.length;
       }
-    }, 10000); // every 10 seconds
+    }, 10000);
 
-    return () => clearInterval(interval); // cleanup on unmount
-  }, [messages, currentRoom]);
+    return () => clearInterval(interval);
+  }, [currentRoom]); // ✅ Only depends on room, NOT messages
+
 
   // Soul selection helpers
   const toggleSoul = soulId => {
@@ -579,8 +584,7 @@ const handleSendMessage = async (
 
       setMessages(prev => [...prev, aiMessage]);
       saveMessageToRoom(currentRoom, aiMessage);
-      saveMessagesToBackend([...messages, aiMessage], currentRoom);
-
+      saveMessagesToBackend([aiMessage], currentRoom);  // ✅ Only save the new message
 
       // 4️⃣ If no voiceUrl from backend but we’re in voice mode, try ElevenLabs
       if (!voiceUrl && (isVoiceMode || showSoulCall)) {
@@ -606,7 +610,8 @@ const handleSendMessage = async (
       // 5️⃣ Save and update state
       saveMessageToRoom(currentRoom, aiMessage);
       setMessages(prev => [...prev, aiMessage]);
-      saveMessagesToBackend([...messages, aiMessage], currentRoom);
+      saveMessagesToBackend([aiMessage], currentRoom);  // ✅ Only save the new message
+
 
       // 6️⃣ Playback if needed
       if ((isVoiceMode || showSoulCall) && voiceUrl) {

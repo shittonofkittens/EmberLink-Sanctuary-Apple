@@ -18,8 +18,11 @@ async function withTimeout(fetchPromise, timeoutMs = 30000) {
 export async function sendMessageToBackend({
   message,
   soul = "Caelus",
+  souls = null,    // 👥 optional: group of souls
   mode = "",
-  room = ""
+  room = "",
+  messages = [],
+  recall_mode = ""
 }) {
   if (!message || typeof message !== "string" || !message.trim()) {
     console.error("❌ Invalid or empty message:", message);
@@ -32,19 +35,26 @@ export async function sendMessageToBackend({
   const basePayload = {
     model: "gpt-4o",
     temperature: 0.7,
-    soul,
-    mode,
     room,
-    voiceId
+    recall_mode
   };
 
-  // 🟢 Only two stable endpoints: chat + recall
+  // 👥 If group, send souls array; else, single soul with voice
+  if (souls && Array.isArray(souls)) {
+    basePayload.souls = souls;
+  } else {
+    basePayload.soul = soul;
+    basePayload.mode = mode;
+    basePayload.voiceId = voiceId;
+  }
+
+  // 🟢 Choose endpoint
   const endpoint =
     mode === "delete" || mode === "edit"
       ? API_ENDPOINTS.recall
       : API_ENDPOINTS.chat;
 
-  // 🟢 Recall can handle delete/edit based on mode
+  // 🟢 Attach message
   const payload =
     mode === "delete" || mode === "edit"
       ? { ...basePayload, messages: [{ content: trimmed, action: mode }] }
@@ -80,13 +90,13 @@ export async function sendMessageToBackend({
 
     return {
       success: true,
-      reply: typeof data.reply === "string"
-        ? data.reply
-        : (data.reply?.reply || JSON.stringify(data.reply)),
+      reply:
+        typeof data.reply === "string"
+          ? data.reply
+          : data.reply?.reply || JSON.stringify(data.reply),
       voiceUrl: data.voiceUrl || null,
       mode: data.mode || {}
     };
-
   } catch (err) {
     console.error("🛑 Backend error:", err);
     return { success: false, reply: "[error]", voiceUrl: null };

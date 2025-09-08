@@ -9,7 +9,6 @@ import re
 import asyncio
 
 # 🔧 Utilities
-from utils.load_system_prompt import load_system_prompt
 from routes.recall import load_recent_seed_context
 from filters.index import apply_input_filter, apply_output_filter as apply_mode_output
 from spice.index import apply_spice_input, apply_spice_output
